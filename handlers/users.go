@@ -29,17 +29,16 @@ func PostSignup(w http.ResponseWriter, r *http.Request) {
 
 	db := r.Context().Value("db").(*sqlx.DB)
 
-	email := r.FormValue("Email")
+	username := r.FormValue("Username")
 	password := r.FormValue("Password")
 	passwordAgain := r.FormValue("PasswordAgain")
 
-	_, err := models.NewUser(db).Signup(nil, email, password, passwordAgain)
+	_, err := models.NewUser(db).Signup(nil, username, password, passwordAgain)
 	if err != nil {
 		libhttp.HandleErrorJson(w, err)
 		return
 	}
 
-	// Perform login
 	PostLogin(w, r)
 }
 
@@ -79,15 +78,14 @@ func PostLogin(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value("db").(*sqlx.DB)
 	sessionStore := r.Context().Value("sessionStore").(sessions.Store)
 
-	email := r.FormValue("Email")
+	username := r.FormValue("Username")
 	password := r.FormValue("Password")
 
 	u := models.NewUser(db)
-
-	user, err := u.GetUserByEmailAndPassword(nil, email, password)
+	user, err := u.GetUserByUsernameAndPassword(nil, username, password)
 	if err != nil {
-		//libhttp.HandleErrorJson(w, err)
-		http.Redirect(w, r, r.URL.Host+"/login", 302)
+		libhttp.HandleErrorJson(w, err)
+		//http.Redirect(w, r, r.URL.Host+"/login", 302)
 		return
 	}
 
@@ -99,6 +97,8 @@ func PostLogin(w http.ResponseWriter, r *http.Request) {
 		libhttp.HandleErrorJson(w, err)
 		return
 	}
+
+	if 
 
 	http.Redirect(w, r, "/", 302)
 }
@@ -148,13 +148,13 @@ func PutUsersID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	email := r.FormValue("Email")
+	username := r.FormValue("Username")
 	password := r.FormValue("Password")
 	passwordAgain := r.FormValue("PasswordAgain")
 
 	u := models.NewUser(db)
 
-	currentUser, err = u.UpdateEmailAndPasswordById(nil, currentUser.ID, email, password, passwordAgain)
+	currentUser, err = u.UpdateUsernameAndPasswordById(nil, currentUser.ID, username, password, passwordAgain)
 	if err != nil {
 		libhttp.HandleErrorJson(w, err)
 		return
