@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Bootstrap Example</title>
+  <title>Online Judge</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="css/bootstrap.min.css">
@@ -16,7 +16,6 @@
 
 <script>
 var loggedIn = {{.Login}};
-console.log(loggedIn);
 if(loggedIn) {
     $(function() {
           $("#nav-placeholder").load("navLoggedIn.html");
@@ -35,27 +34,28 @@ if(loggedIn) {
     <div class="form-group">
       <label class="control-label col-sm-2" for="username">Username:</label>
       <div class="col-sm-5">
-        <input type="username" class="form-control" id="username" placeholder="Enter username" name="username">
+        <input type="username" required ="true" class="form-control" id="username" placeholder="Enter username" name="username">
       </div>
     </div>
     <div class="form-group">
       <label class="control-label col-sm-2" for="password">Password:</label>
       <div class="col-sm-5">
-        <input type="password" class="form-control" id="password" placeholder="Enter password" name="password">
+        <input type="password" required="true" class="form-control" id="password" placeholder="Enter password" name="password">
       </div>
     </div>
     <div class="form-group">
       <label class="control-label col-sm-2" for="confirm_password">Confirm Password:</label>
       <div class="col-sm-5">
-        <input type="password" class="form-control" id="confirm_password" placeholder="Confirm password" name="confirm_password">
+        <input type="password" required="true" class="form-control" id="confirm_password" placeholder="Confirm password" name="confirm_password">
       </div>
     </div>
     <div class="form-group">
       <div class="col-sm-offset-2 col-sm-5">
-        <button type="submit" class="btn btn-default">Submit</button>
+        <button type="submit" class="btn btn-primary">Submit</button>
       </div>
     </div>
   </form>
+
   <script>
     var password = document.getElementById("password") , confirm_password = document.getElementById("confirm_password");
 
@@ -69,6 +69,19 @@ if(loggedIn) {
 
     password.onchange = validatePassword;
     confirm_password.onkeyup = validatePassword;
+
+    var username = document.getElementById("username");
+    function validateUsername() {
+        console.log("hello");
+        console.log(username.value);
+        if(username.value == 0) {
+            console.log("empty");
+            username.setCustomValidity("Username can't be empty");
+        } else {
+            username.setCustomValidity('');
+        }
+    }
+
   </script>
 
 </div>
