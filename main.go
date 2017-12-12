@@ -1,12 +1,14 @@
 package main
 
 import (
+	"github.com/go-macaron/session"
 	"gopkg.in/macaron.v1"
 )
 
 func main() {
 	m := macaron.Classic()
 	m.Use(macaron.Renderer())
+	m.Use(session.Sessioner())
 
 	m.Get("/", func(ctx *macaron.Context) {
 		ctx.Data["Login"] = 0
@@ -33,5 +35,5 @@ func main() {
 		ctx.HTML(200, "signout")
 	})
 
-	m.Run(8000)
+	m.Run()
 }
