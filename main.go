@@ -1,17 +1,34 @@
 package main
 
 import (
-	"github.com/go-macaron/session"
+	"fmt"
+
+	"github.com/go-xorm/xorm"
+	_ "github.com/ziutek/mymysql/mysql"
 	"gopkg.in/macaron.v1"
 )
 
+var engine *xorm.Engine
+
 func main() {
+	var err error
+	engine, err = xorm.NewEngine("mymysql", "root@/online-judge?charset=utf8")
+
+	if err != nil {
+		fmt.Println("ERROR: ", err)
+		return
+	} else {
+		fmt.Println(engine)
+		engine.DBMetas()
+	}
+
 	m := macaron.Classic()
 	m.Use(macaron.Renderer())
-	m.Use(session.Sessioner())
+	//m.Use(session.Sessioner())
 
 	m.Get("/", func(ctx *macaron.Context) {
-		ctx.Data["Login"] = 0
+		//		sess.Set("session", "session middleware")
+		//		ctx.Data["Login"] = sess.Get("session").(string)
 		ctx.HTML(200, "index")
 	})
 
