@@ -143,7 +143,7 @@ func main() {
 	})
 
 	//TODO: logout, signout doesn't work, why?
-	m.Get("/l0gout", func(ctx *macaron.Context) {
+	m.Get("/signout", func(ctx *macaron.Context) {
 		//if logged out already, then redirect to home
 		if ctx.Data["Login"] == 0 {
 			ctx.Redirect(ctx.Req.URL.Host, 302)
