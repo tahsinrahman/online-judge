@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>Online Judge</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="/fontawesome-all.css">
+    <!-- Bootstrap core CSS -->
+    <link href="/css/bootstrap.min.css.map" rel="stylesheet">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Material Design Bootstrap -->
+    <link href="/css/mdb.min.css" rel="stylesheet">
+    <!-- Your custom styles (optional) -->
+    <link href="/css/style.css" rel="stylesheet">
+
+    <script src="/js/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+
+
+    <!--start of Navigation bar-->
+    <div id="nav-placeholder"> </div>
+
+    <script>
+    var loggedIn = {{.Login}};
+    if(loggedIn) {
+        $(function() {
+              $("#nav-placeholder").load("/navLoggedIn.html");
+        });
+    } else {
+        $(function() {
+              $("#nav-placeholder").load("/navLoggedOut.html");
+        });
+    }
+    </script>
+    <!--end of Navigation bar-->
+
+    <!-- SCRIPTS -->
+    <!-- JQuery -->
+    <script type="text/javascript" src="/js/jquery-3.2.1.min.js"></script>
+    <!-- Bootstrap tooltips -->
+    <script type="text/javascript" src="/js/popper.min.js"></script>
+    <!-- Bootstrap core JavaScript -->
+    <script type="text/javascript" src="/js/bootstrap.min.js"></script>
+    <!-- MDB core JavaScript -->
+    <script type="text/javascript" src="/js/mdb.min.js"></script>
+</head>
+
+<body>
+    <div class="container-fluid" style="width: 90%; margin-top: 30px;">
+      <div class="row">
+          <div class="col-md-10">
+              <h1 class="h1-responsive text-left">Contests</h1>
+              <hr class="my-2">
+          </div>
+          <div class="col-md-2">
+              <a class="btn btn-primary" href="/contests/new" role="button">Create New</a>
+          </div>
+      </div>
+
+        <div class="jumbotron">
+            <h4 class="h4-responsive">Running Contests</h4>
+            <br>
+            <table class="table" id="running_table">
+              <thead>
+                <tr>
+                  <th>Contest Name</th>
+                  <th>Start Date</th>
+                  <th>Start Time</th>
+                  <th>Duration</th>
+                  <th>Manager</th>
+                </tr>
+              </thead>
+              <tbody id="running">
+              </tbody>
+            </table>
+        </div>
+        <div class="jumbotron">
+            <h4 class="h4-responsive">Upcoming Contests</h4>
+            <hr class="my-2">
+            <br>
+            <table class="table" id="upcoming_table">
+              <thead>
+                <tr>
+                  <th>Contest Name</th>
+                  <th>Start Date</th>
+                  <th>Start Time</th>
+                  <th>Duration</th>
+                  <th>Manager</th>
+                </tr>
+              </thead>
+              <tbody id="upcoming">
+              </tbody>
+            </table>
+        </div>
+        <div class="jumbotron">
+            <h4 class="h4-responsive">Past Contests</h4>
+            <hr class="my-2">
+            <br>
+            <table class="table" id="past_table">
+              <thead>
+                <tr>
+                  <th>Contest Name</th>
+                  <th>Start Date</th>
+                  <th>Start Time</th>
+                  <th>Duration</th>
+                  <th>Manager</th>
+                </tr>
+              </thead>
+              <tbody id="past">
+              </tbody>
+            </table>
+        </div>
+	</div>
+
+  <script>
+    //var running, past, upcoming = {{.All}};
+    //console.log(running, past, upcoming);
+    var running = {{.All}};
+    var past = running;
+    var upcoming = running;
+
+	for(var i=0;i<running.length;i++)
+	{
+	    var tr="<tr>";
+      var td1='<td><a href="/contests/' + running[i]["Id"] + '" class="blue-text">' +running[i]["Name"]+ "</a></td>";
+	    var td2="<td>"+running[i]["StartDate"]+"</td>";
+	    var td3="<td>"+running[i]["StartTime"]+"</td>";
+	    var td4="<td>"+running[i]["Duration"]+"</td>";
+	    var td5="<td>"+running[i]["Manager"]+"</td></tr>";
+
+	   $("#running").append(tr+td1+td2+td3+td4+td5);
+
+	}
+
+	for(var i=0;i<upcoming.length;i++)
+	{
+	    var tr="<tr>";
+      var td1='<td><a href="/contests/' + upcoming[i]["Id"] + '" class="blue-text">' +upcoming[i]["Name"]+ "</a></td>";
+	    var td2="<td>"+upcoming[i]["StartDate"]+"</td>";
+	    var td3="<td>"+upcoming[i]["StartTime"]+"</td>";
+	    var td4="<td>"+upcoming[i]["Duration"]+"</td>";
+	    var td5="<td>"+upcoming[i]["Manager"]+"</td></tr>";
+
+	   $("#upcoming").append(tr+td1+td2+td3+td4+td5);
+
+	}
+
+	for(var i=0;i<past.length;i++)
+	{
+	    var tr="<tr>";
+      var td1='<td><a href="/contests/' + past[i]["Id"] + '" class="blue-text">' +past[i]["Name"]+ "</a></td>";
+	    var td2="<td>"+past[i]["StartDate"]+"</td>";
+	    var td3="<td>"+past[i]["StartTime"]+"</td>";
+	    var td4="<td>"+past[i]["Duration"]+"</td>";
+	    var td5="<td>"+past[i]["Manager"]+"</td></tr>";
+
+	   $("#past").append(tr+td1+td2+td3+td4+td5);
+
+	}
+
+  </script>
+
+</body>
+</html>
