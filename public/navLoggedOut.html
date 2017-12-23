@@ -1,22 +1,29 @@
-<nav class="navbar navbar-inverse navbar-static-top">
-  <div class="container-fluid">
-    <div class="navbar-header">
-      <a class="navbar-brand" href="/">Online-Judge</a>
-    </div>
-    <ul class="nav navbar-nav">
-      <li class="active"><a href="/">Home</a></li>
-      <li><a href="/contests">Contests</a></li>
-      <li><a href="/dashboard">Dashboard</a></li>
-      <li><a href="/standing">Standing</a></li>
-      <li><a href="/submissions">Submissions</a></li>
-    </ul>
-    <ul class="nav navbar-nav navbar-right">
-        <div>
-        <ul class="nav navbar-nav">
-          <li><a href="/signin"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
-          <li><a href="/signup"><span class="glyphicon glyphicon-user"></span> Sign Up</a></li>
-        </ul>
+  <!--Navbar -->
+    <nav class="mb-3 navbar navbar-expand-lg navbar-dark elegant-color">
+        <a class="navbar-brand" href="/">Online-Judge</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent-4" aria-controls="navbarSupportedContent-4" aria-expanded="false" aria-label="Toggle navigation"> <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent-4">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/contests">Contests <span class="sr-only">(current)</span></a>
+                </li>
+            </ul>
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="#"><i class="fa fa-envelope"></i> Contact <span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item dropdown"> <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink-4" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-user"></i> Login/Register </a>
+                  <div class="dropdown-menu dropdown-menu-right dropdown-cyan" aria-labelledby="navbarDropdownMenuLink-4">
+                      <a class="dropdown-item" href="/signin">Sigin In</a>
+                      <a class="dropdown-item" href="/signup">Sign Up</a>
+                  </div>
+
+                </li>
+            </ul>
         </div>
-    </ul>
-  </div>
-</nav>
+    </nav>
+    <!--/.Navbar -->

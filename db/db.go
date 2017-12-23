@@ -1,6 +1,8 @@
 package db
 
-import "github.com/go-xorm/xorm"
+import (
+	"github.com/go-xorm/xorm"
+)
 
 //sql engine
 var Engine *xorm.Engine
@@ -16,4 +18,5 @@ func StartEngine() {
 		//TODO: response 500 internal server error
 		panic(err.Error())
 	}
+	//Engine.SetMapper(core.NewCacheMapper(new(core.SameMapper)))
 }

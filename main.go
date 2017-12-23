@@ -28,6 +28,28 @@ func main() {
 	m.Post("/signin", binding.Bind(handlers.Users{}), handlers.PostSignIn)
 	m.Get("/signout", handlers.GetSignOut)
 
+	//handlers for contests
+	m.Group("/contests", func() {
+		m.Get("/", handlers.GetAllContests)                                       //done
+		m.Get("/new", handlers.GetNewContest)                                     //done
+		m.Post("/new", binding.Bind(handlers.Contest{}), handlers.PostNewContest) //done
+
+		m.Group("/:cid", func() {
+			m.Get("/", handlers.GetContest)
+			m.Put("/", handlers.UpdateContest)
+			m.Delete("/", handlers.DeleteContest)
+
+			m.Get("/:pid", handlers.GetProblem)
+			m.Put("/:pid", handlers.UpdateProblem)
+			m.Delete("/:pid", handlers.DeleteProblem)
+			m.Post("/:pid/submit", handlers.SubmitProblem)
+
+			m.Get("/rank", handlers.GetRank)
+			m.Get("/allsubmissions", handlers.GetAllSubmissions)
+			m.Get("/mysubmissions", handlers.GetMySubmissions)
+		})
+	})
+
 	//starting the server
 	m.Run()
 }
