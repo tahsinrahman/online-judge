@@ -142,12 +142,25 @@ func GetAllContests(ctx *macaron.Context) {
 //TODO: only admin can create contest
 //TODO: add option for participient list
 func GetNewContest(ctx *macaron.Context) {
+	//only admin can view this page
+	if ctx.Data["Username"] != "admin" {
+		ctx.Resp.Write([]byte("unauthorized. only admin can create a new contest"))
+		return
+	}
+
+	//if authorised then only can view the page
 	ctx.HTML(200, "new_contest")
 }
 
 //route: /contests/new POST
 //create a new contest, admin must be logged in
 func PostNewContest(ctx *macaron.Context, contest Contest) {
+	//only admin has this privilage
+	if ctx.Data["Username"] != "admin" {
+		ctx.Resp.Write([]byte("unauthorized. only admin can create a new contest"))
+		return
+	}
+
 	//insert the contest into the db
 	_, err := db.Engine.Insert(&contest)
 
@@ -165,14 +178,19 @@ func PostNewContest(ctx *macaron.Context, contest Contest) {
 //show dashboard
 //if logged in, show solved in green
 func GetContest(ctx *macaron.Context) {
-	fmt.Println("GetDashboard")
+	//show all problems
 }
 
-//route: /contests/:cid PUT
-//show dashboard
-//if logged in, show solved in green
-func UpdateContest(ctx *macaron.Context) {
-	fmt.Println("GetDashboard")
+//route: /contests/:cid/update GET
+//update contest
+//if logged in
+func GetUpdateContest(ctx *macaron.Context) {
+}
+
+//route: /contests/:cid/update POST
+//show contest
+//if logged in
+func PostUpdateContest(ctx *macaron.Context) {
 }
 
 //route: /contests/:cid DELETE

@@ -54,8 +54,7 @@
               <h1 class="h1-responsive text-left">Contests</h1>
               <hr class="my-2">
           </div>
-          <div class="col-md-2">
-              <a class="btn btn-primary" href="/contests/new" role="button">Create New</a>
+          <div id="auth" class="col-md-2">
           </div>
       </div>
 
@@ -115,6 +114,12 @@
 	</div>
 
   <script>
+    var user = {{.Username}};
+    console.log(user);
+    if(user == "admin") {
+        $("#auth").append('<a class="btn btn-primary" href="/contests/new" role="button">Create New</a>');
+    }
+
     //var running, past, upcoming = {{.All}};
     //console.log(running, past, upcoming);
     var running = {{.Running}};

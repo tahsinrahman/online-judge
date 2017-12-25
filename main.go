@@ -20,23 +20,27 @@ func main() {
 	m.Use(macaron.Renderer())              //for html rendering
 	m.Use(middlewares.CheckAuthentication) //check cookie
 
-	//handlers for user registration, login and logout
-	m.Get("/", handlers.GetHome)
-	m.Get("/signup", handlers.GetSignUp)
-	m.Post("/signup", binding.Bind(handlers.Users{}), handlers.PostSignUp)
-	m.Get("/signin", handlers.GetSignIn)
-	m.Post("/signin", binding.Bind(handlers.Users{}), handlers.PostSignIn)
-	m.Get("/signout", handlers.GetSignOut)
+	//handlers for user registration, login and logout TODO: secret key based cookie
+	m.Get("/", handlers.GetHome)                                           //done
+	m.Get("/signup", handlers.GetSignUp)                                   //done
+	m.Post("/signup", binding.Bind(handlers.Users{}), handlers.PostSignUp) //done
+	m.Get("/signin", handlers.GetSignIn)                                   //done
+	m.Post("/signin", binding.Bind(handlers.Users{}), handlers.PostSignIn) //done
+	m.Get("/signout", handlers.GetSignOut)                                 //done
 
 	//handlers for contests
 	m.Group("/contests", func() {
-		m.Get("/", handlers.GetAllContests)                                       //done
+		m.Get("/", handlers.GetAllContests) //done
+
 		m.Get("/new", handlers.GetNewContest)                                     //done
 		m.Post("/new", binding.Bind(handlers.Contest{}), handlers.PostNewContest) //done
 
 		m.Group("/:cid", func() {
 			m.Get("/", handlers.GetContest)
-			m.Put("/", handlers.UpdateContest)
+
+			m.Get("/update", handlers.GetUpdateContest)
+			m.Put("/update", handlers.PostUpdateContest)
+
 			m.Delete("/", handlers.DeleteContest)
 
 			m.Get("/:pid", handlers.GetProblem)
