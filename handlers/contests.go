@@ -2,6 +2,9 @@ package handlers
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/tahsinrahman/online-judge/db"
 	macaron "gopkg.in/macaron.v1"
@@ -34,21 +37,101 @@ type Contest struct {
 }
 
 //route: /contests
-//show all contests, sorted by time
+//show all contests, sorted by time TODO: sorted by time
 //first show current contests, then future, then past
 func GetAllContests(ctx *macaron.Context) {
 	//show all contests from mysql to html
-	var all []Contest
+	var all, running, upcoming, past []Contest
 
 	if err := db.Engine.Find(&all); err != nil {
 		//TODO: response internal server error
-		fmt.Println("error")
 		ctx.Redirect("/")
 		return
 	}
 
-	//TODO: catagorize contests
-	ctx.Data["All"] = all
+	for _, contest := range all {
+		startDate := strings.Split(contest.StartDate, "-")
+		startTime := strings.Split(contest.StartTime, ":")
+
+		year, err := strconv.Atoi(startDate[0])
+		if err != nil {
+			//TODO: 500 error
+			ctx.Redirect("/")
+			return
+		}
+		month, err := strconv.Atoi(startDate[1])
+		if err != nil {
+			//TODO: 500 error
+			ctx.Redirect("/")
+			return
+		}
+		day, err := strconv.Atoi(startDate[2])
+		if err != nil {
+			//TODO: 500 error
+			ctx.Redirect("/")
+			return
+		}
+		hour, err := strconv.Atoi(startTime[0])
+		if err != nil {
+			//TODO: 500 error
+			ctx.Redirect("/")
+			return
+		}
+		min, err := strconv.Atoi(startTime[1])
+		if err != nil {
+			//TODO: 500 error
+			ctx.Redirect("/")
+			return
+		}
+		sec, err := strconv.Atoi(startTime[2])
+		if err != nil {
+			//TODO: 500 error
+			ctx.Redirect("/")
+			return
+		}
+
+		//start time of contest
+		contestStartTime := time.Date(year, time.Month(month), day, hour, min, sec, 0, time.Local)
+
+		duration := strings.Split(contest.Duration, ":")
+		hour, err = strconv.Atoi(duration[0])
+		if err != nil {
+			//TODO: 500 error
+			ctx.Redirect("/")
+			return
+		}
+		min, err = strconv.Atoi(duration[1])
+		if err != nil {
+			//TODO: 500 error
+			ctx.Redirect("/")
+			return
+		}
+		sec, err = strconv.Atoi(duration[2])
+		if err != nil {
+			//TODO: 500 error
+			ctx.Redirect("/")
+			return
+		}
+
+		contestDuration := time.Duration(hour*60*60+min*60+sec) * time.Second
+		contestEndTime := contestStartTime.Add(contestDuration)
+
+		//catagorize into running, upcoming and past
+		if time.Now().After(contestStartTime) {
+			if contestEndTime.After(time.Now()) {
+				running = append(running, contest)
+			} else {
+				past = append(past, contest)
+			}
+		} else {
+			upcoming = append(upcoming, contest)
+		}
+	}
+
+	//TODO: sort by time
+	ctx.Data["Upcoming"] = upcoming
+	ctx.Data["Running"] = running
+	ctx.Data["Past"] = past
 
 	//for rendering html
 	ctx.HTML(200, "contests")
@@ -59,7 +142,6 @@ func GetAllContests(ctx *macaron.Context) {
 //TODO: only admin can create contest
 //TODO: add option for participient list
 func GetNewContest(ctx *macaron.Context) {
-
 	ctx.HTML(200, "new_contest")
 }
 
@@ -67,12 +149,10 @@ func GetNewContest(ctx *macaron.Context) {
 //create a new contest, admin must be logged in
 func PostNewContest(ctx *macaron.Context, contest Contest) {
 	//insert the contest into the db
-	fmt.Println(contest)
 	_, err := db.Engine.Insert(&contest)
 
 	if err != nil {
 		//TODO: response internal server error
-		fmt.Println(err)
 		ctx.Redirect("/contests/new")
 		return
 	}
