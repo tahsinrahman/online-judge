@@ -6,6 +6,7 @@ import (
 )
 
 type Users struct {
+	User_id  int
 	Name     string `form:"name"`
 	Username string `form:"username"`
 	Password string `form:"password"`
@@ -39,22 +40,25 @@ func PostSignUp(ctx *macaron.Context, user Users) {
 	//TODO: encryption for pass
 
 	//check if username already exists
-	//TODO: if yes, then response with "username exists"
 	//else insert new user into db
 
 	//check if exists
 	var tmpUser = Users{Username: user.Username}
 	has, err := db.Engine.Get(&tmpUser)
 
-	if err != nil || has {
-		ctx.Redirect(ctx.Req.URL.Host+"/signup", 302)
+	if err != nil {
+		ctx.Resp.Write([]byte("500 internal server error"))
+		return
+	}
+
+	if has {
+		ctx.Resp.Write([]byte("username exists"))
 		return
 	}
 
 	//insert into db
 	if _, err := db.Engine.Insert(user); err != nil {
-		//TODO: response internal server error
-		ctx.Redirect(ctx.Req.URL.Host+"/signup", 302)
+		ctx.Resp.Write([]byte("500 internal server error"))
 		return
 	}
 
@@ -95,8 +99,12 @@ func PostSignIn(ctx *macaron.Context, user Users) {
 	var tmpUser = Users{Username: user.Username, Password: user.Password}
 	has, err := db.Engine.Get(&tmpUser)
 
-	if err != nil || has == false {
-		ctx.Redirect(ctx.Req.URL.Host+"/signin", 302)
+	if err != nil {
+		ctx.Resp.Write([]byte("500 internal server error"))
+		return
+	}
+	if has == false {
+		ctx.Resp.Write([]byte("username or password mismatch"))
 		return
 	}
 

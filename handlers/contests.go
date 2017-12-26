@@ -27,12 +27,13 @@ type Problem struct {
 }
 
 type Contest struct {
-	Id        int
-	Name      string `form:"name"`
-	StartDate string `form:"date"`
-	StartTime string `form:"time"`
-	Duration  string `form:"duration"`
-	Manager   string `form:"manager"`
+	Contest_id int
+	Name       string `form:"name"`
+	StartDate  string `form:"date"`
+	StartTime  string `form:"time"`
+	Duration   string `form:"duration"`
+	Manager    string `form:"manager"`
+	Manager_id int
 	//problems []Problem
 }
 
@@ -44,8 +45,8 @@ func GetAllContests(ctx *macaron.Context) {
 	var all, running, upcoming, past []Contest
 
 	if err := db.Engine.Find(&all); err != nil {
-		//TODO: response internal server error
-		ctx.Redirect("/")
+		fmt.Println(err)
+		ctx.Resp.Write([]byte("500 internal server error"))
 		return
 	}
 
@@ -161,12 +162,29 @@ func PostNewContest(ctx *macaron.Context, contest Contest) {
 		return
 	}
 
-	//insert the contest into the db
-	_, err := db.Engine.Insert(&contest)
+	//check if manager is valid
+	var manager = Users{Username: contest.Manager}
+	has, err := db.Engine.Get(&manager)
 
 	if err != nil {
-		//TODO: response internal server error
-		ctx.Redirect("/contests/new")
+		ctx.Resp.Write([]byte("500 internal server error"))
+		return
+	}
+
+	if has == false {
+		ctx.Resp.Write([]byte("manager not found"))
+		return
+	}
+
+	//use namanger name instead of handle
+	contest.Manager = manager.Name
+	contest.Manager_id = manager.User_id
+
+	//insert the contest into the db
+	_, err = db.Engine.Insert(&contest)
+
+	if err != nil {
+		ctx.Resp.Write([]byte("500 internal server error"))
 		return
 	}
 
@@ -178,7 +196,10 @@ func PostNewContest(ctx *macaron.Context, contest Contest) {
 //show dashboard
 //if logged in, show solved in green
 func GetContest(ctx *macaron.Context) {
-	//show all problems
+	//show all problems of this contest
+
+	//problems
+	ctx.HTML(200, "dashboard")
 }
 
 //route: /contests/:cid/update GET
