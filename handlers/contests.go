@@ -40,6 +40,7 @@ type Contest struct {
 	ContestEndTime   time.Time //saved in mysql after processing formdata
 	Manager          string    `form:"manager"`
 	ManagerId        int
+	ManagerUsername  string
 }
 
 func findTime(contest Contest) (time.Time, time.Time, error) {
@@ -178,6 +179,7 @@ func PostNewContest(ctx *macaron.Context, contest Contest) {
 	//use namanger name instead of handle
 	contest.Manager = manager.Name
 	contest.ManagerId = manager.UserId
+	contest.ManagerUsername = manager.Username
 
 	//update start and end time
 	st, en, err := findTime(contest)
@@ -206,6 +208,8 @@ func PostNewContest(ctx *macaron.Context, contest Contest) {
 		return
 	}
 
+	fmt.Println(contest)
+
 	//redirect to contests page
 	ctx.Redirect("/contests")
 }
@@ -214,43 +218,18 @@ func PostNewContest(ctx *macaron.Context, contest Contest) {
 //show dashboard
 //if logged in, show solved in green
 func GetDashboard(ctx *macaron.Context) {
-	//show all problems of this contest
+	//checkigs are done in middleware
+
 	var all []Problem
-
-	cid, err := strconv.Atoi(ctx.Params(":cid"))
-
-	if err != nil {
-		fmt.Println(err)
-		//ctx.Resp.Write([]byte("500 internal server error"))
-		ctx.Resp.Write([]byte(err.Error()))
-		return
-	}
-
-	if err := db.Engine.Where("contest_id = ?", cid).Find(&all); err != nil {
+	if err := db.Engine.Where("contest_id = ?", ctx.Params(":cid")).Find(&all); err != nil {
 		//fmt.Println(err)
 		//ctx.Resp.Write([]byte("500 internal server error"))
 		ctx.Resp.Write([]byte(err.Error()))
-		return
-	}
-
-	var contest = Contest{ContestId: cid}
-	has, err := db.Engine.Get(&contest)
-
-	if err != nil {
-		//fmt.Println(err)
-		//ctx.Resp.Write([]byte("500 internal server error"))
-		ctx.Resp.Write([]byte(err.Error()))
-		return
-	}
-
-	if has == false {
-		ctx.Resp.Write([]byte("contest doesn't exist"))
 		return
 	}
 
 	//TODO: optimize timing in dashboard
 
-	ctx.Data["Contest"] = contest
 	ctx.Data["Problems"] = all
 
 	//problems
@@ -259,8 +238,16 @@ func GetDashboard(ctx *macaron.Context) {
 
 //route: /contests/:cid/update GET
 //update contest
-//if logged in
 func GetUpdateContest(ctx *macaron.Context) {
+	//type cast from interface to Contest
+	contest, _ := ctx.Data["Contest"].(Contest)
+
+	if ctx.Data["Username"] != contest.ManagerUsername {
+		ctx.Resp.Write([]byte("unauthorized. only contest manager can update contest"))
+		return
+	}
+
+	ctx.HTML(200, "update_contest")
 }
 
 //route: /contests/:cid/update POST

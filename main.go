@@ -39,7 +39,7 @@ func main() {
 			m.Get("/", handlers.GetDashboard) //done
 
 			m.Get("/update", handlers.GetUpdateContest)
-			m.Put("/update", handlers.PostUpdateContest)
+			m.Post("/update", handlers.PostUpdateContest)
 
 			m.Delete("/", handlers.DeleteContest)
 
@@ -53,7 +53,7 @@ func main() {
 			m.Get("/rank", handlers.GetRank)
 			m.Get("/allsubmissions", handlers.GetAllSubmissions)
 			m.Get("/mysubmissions", handlers.GetMySubmissions)
-		})
+		}, middlewares.CheckContestExistance)
 	})
 
 	//starting the server
