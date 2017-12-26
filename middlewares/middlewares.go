@@ -50,3 +50,13 @@ func CheckContestExistance(ctx *macaron.Context) {
 
 	ctx.Data["Contest"] = contest
 }
+
+func CheckManager(ctx *macaron.Context) {
+	contest, _ := ctx.Data["Contest"].(handlers.Contest)
+	fmt.Println(contest)
+
+	if ctx.Data["Username"] != contest.ManagerUsername {
+		ctx.Resp.Write([]byte("unauthorized. only contest manager can update contest"))
+		return
+	}
+}

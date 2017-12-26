@@ -31,7 +31,7 @@ type Problem struct {
 }
 
 type Contest struct {
-	ContestId        int
+	ContestId        int       `xorm:"pk"`
 	Name             string    `form:"name"`
 	StartDate        string    `form:"date"` //used to get data from form
 	StartTime        string    `form:"time"` //used to get data from form
@@ -150,17 +150,7 @@ func GetNewContest(ctx *macaron.Context) {
 	ctx.HTML(200, "new_contest")
 }
 
-//route: /contests/new POST
-//create a new contest, admin must be logged in
-func PostNewContest(ctx *macaron.Context, contest Contest) {
-	//only admin has this privilage
-	if ctx.Data["Username"] != "admin" {
-		ctx.Resp.Write([]byte("unauthorized. only admin can create a new contest"))
-		return
-	}
-
-	//start time must not be past
-
+func newContestForm(ctx *macaron.Context, contest Contest) *Contest {
 	//check if manager is valid
 	var manager = Users{Username: contest.Manager}
 	has, err := db.Engine.Get(&manager)
@@ -168,12 +158,12 @@ func PostNewContest(ctx *macaron.Context, contest Contest) {
 	if err != nil {
 		//ctx.Resp.Write([]byte("500 internal server error"))
 		ctx.Resp.Write([]byte(err.Error()))
-		return
+		return nil
 	}
 
 	if has == false {
 		ctx.Resp.Write([]byte("manager not found"))
-		return
+		return nil
 	}
 
 	//use namanger name instead of handle
@@ -187,7 +177,7 @@ func PostNewContest(ctx *macaron.Context, contest Contest) {
 	if err != nil {
 		//fmt.Println(err)
 		ctx.Resp.Write([]byte(err.Error()))
-		return
+		return nil
 	}
 
 	//set data according to date format in db
@@ -196,19 +186,35 @@ func PostNewContest(ctx *macaron.Context, contest Contest) {
 
 	if time.Now().After(st) {
 		ctx.Resp.Write([]byte("start time must not be less than current time"))
+		return nil
+	}
+
+	return &contest
+}
+
+//route: /contests/new POST
+//create a new contest, admin must be logged in
+func PostNewContest(ctx *macaron.Context, contest Contest) {
+	//only admin has this privilage
+	if ctx.Data["Username"] != "admin" {
+		ctx.Resp.Write([]byte("unauthorized. only admin can create a new contest"))
+		return
+	}
+
+	newContest := newContestForm(ctx, contest)
+
+	if newContest == nil {
 		return
 	}
 
 	//insert the contest into the db
-	_, err = db.Engine.Insert(&contest)
+	_, err := db.Engine.Insert(newContest)
 
 	if err != nil {
 		//ctx.Resp.Write([]byte("500 internal server error"))
 		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
-
-	fmt.Println(contest)
 
 	//redirect to contests page
 	ctx.Redirect("/contests")
@@ -239,21 +245,28 @@ func GetDashboard(ctx *macaron.Context) {
 //route: /contests/:cid/update GET
 //update contest
 func GetUpdateContest(ctx *macaron.Context) {
-	//type cast from interface to Contest
-	contest, _ := ctx.Data["Contest"].(Contest)
-
-	if ctx.Data["Username"] != contest.ManagerUsername {
-		ctx.Resp.Write([]byte("unauthorized. only contest manager can update contest"))
-		return
-	}
-
 	ctx.HTML(200, "update_contest")
 }
 
 //route: /contests/:cid/update POST
-//show contest
-//if logged in
-func PostUpdateContest(ctx *macaron.Context) {
+//update contest info into db
+func PostUpdateContest(ctx *macaron.Context, contest Contest) {
+	newContest := newContestForm(ctx, contest)
+
+	if newContest == nil {
+		return
+	}
+
+	cid := ctx.Params(":cid")
+	//update db
+	_, err := db.Engine.Id(cid).Update(*newContest)
+
+	if err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
+
+	ctx.Redirect("/contests/" + cid)
 }
 
 //route: /contests/:cid DELETE

@@ -52,7 +52,7 @@
   </head>
   <body>
     <div class="container-fluid" style="width: 90%; margin-top: 50px;">
-      <form action="/contests/new" method="post">
+      <form id = "form">
         <div class="jumbotron">
           <h4 class="h4-responsive">Basic Information
           </h4>
@@ -96,10 +96,21 @@
           </div>
         </div>
         <div class="text-center">
-          <button class="btn btn-primary">Update </button>
+          <button id = "submit" class="btn btn-primary">Update </button>
         </div>
       </form>
     </div>
   </body>
+  <script>
+    $('#submit').click(function(){
+      var path = window.location.pathname;
+      var contest = {{.Contest}};
+      $('#form').attr({
+        'action': '/contests/' + contest["ContestId"] + '/update',
+        'method': 'post'
+      });
+    });
+
+  </script>
 </html>
 

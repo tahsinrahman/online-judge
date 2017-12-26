@@ -37,11 +37,10 @@ func main() {
 
 		m.Group("/:cid", func() {
 			m.Get("/", handlers.GetDashboard) //done
+			m.Delete("/", middlewares.CheckManager, handlers.DeleteContest)
 
-			m.Get("/update", handlers.GetUpdateContest)
-			m.Post("/update", handlers.PostUpdateContest)
-
-			m.Delete("/", handlers.DeleteContest)
+			m.Get("/update", middlewares.CheckManager, handlers.GetUpdateContest)
+			m.Post("/update", middlewares.CheckManager, binding.Bind(handlers.Contest{}), handlers.PostUpdateContest)
 
 			m.Get("/:pid", handlers.GetProblem)
 			//m.Get("/:pid/update", handlers.GetUpdateProblem)
