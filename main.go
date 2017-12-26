@@ -36,7 +36,7 @@ func main() {
 		m.Post("/new", binding.Bind(handlers.Contest{}), handlers.PostNewContest) //done
 
 		m.Group("/:cid", func() {
-			m.Get("/", handlers.GetDashboard)
+			m.Get("/", handlers.GetDashboard) //done
 
 			m.Get("/update", handlers.GetUpdateContest)
 			m.Put("/update", handlers.PostUpdateContest)
@@ -44,6 +44,8 @@ func main() {
 			m.Delete("/", handlers.DeleteContest)
 
 			m.Get("/:pid", handlers.GetProblem)
+			//m.Get("/:pid/update", handlers.GetUpdateProblem)
+			//m.Get("/:pid/new", handlers.newProblem)
 			m.Put("/:pid", handlers.UpdateProblem)
 			m.Delete("/:pid", handlers.DeleteProblem)
 			m.Post("/:pid/submit", handlers.SubmitProblem)

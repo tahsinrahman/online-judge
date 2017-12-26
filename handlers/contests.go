@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -45,38 +46,52 @@ func findTime(contest Contest) (time.Time, time.Time, error) {
 	startDate := strings.Split(contest.StartDate, "-")
 	startTime := strings.Split(contest.StartTime, ":")
 
+	tmp := time.Now()
+	if len(startDate) != 3 {
+		return tmp, tmp, errors.New("invalid date")
+	}
+
+	if len(startTime) != 2 {
+		return tmp, tmp, errors.New("invalid time")
+	}
+
 	year, err := strconv.Atoi(startDate[0])
 	if err != nil {
-		return time.Now(), time.Now(), err
+		return tmp, tmp, err
 	}
 	month, err := strconv.Atoi(startDate[1])
 	if err != nil {
-		return time.Now(), time.Now(), err
+		return tmp, tmp, err
 	}
 	day, err := strconv.Atoi(startDate[2])
 	if err != nil {
-		return time.Now(), time.Now(), err
+		return tmp, tmp, err
 	}
 	hour, err := strconv.Atoi(startTime[0])
 	if err != nil {
-		return time.Now(), time.Now(), err
+		return tmp, tmp, err
 	}
 	min, err := strconv.Atoi(startTime[1])
 	if err != nil {
-		return time.Now(), time.Now(), err
+		return tmp, tmp, err
 	}
 
 	//start time of contest
 	contestStartTime := time.Date(year, time.Month(month), day, hour, min, 0, 0, time.Local)
 
 	duration := strings.Split(contest.Duration, ":")
+
+	if len(duration) != 2 {
+		return tmp, tmp, errors.New("invalid duration")
+	}
+
 	hour, err = strconv.Atoi(duration[0])
 	if err != nil {
-		return time.Now(), time.Now(), err
+		return tmp, tmp, err
 	}
 	min, err = strconv.Atoi(duration[1])
 	if err != nil {
-		return time.Now(), time.Now(), err
+		return tmp, tmp, err
 	}
 
 	contestDuration := time.Duration(hour*60*60+min*60) * time.Second
@@ -87,14 +102,13 @@ func findTime(contest Contest) (time.Time, time.Time, error) {
 
 //route: /contests
 //show all contests, sorted by time TODO: sorted by time
-//first show current contests, then future, then past
 func GetAllContests(ctx *macaron.Context) {
 	//show all contests from mysql to html
 	var all, running, upcoming, past []Contest
 
 	if err := db.Engine.Find(&all); err != nil {
-		fmt.Println(err)
-		ctx.Resp.Write([]byte("500 internal server error"))
+		//ctx.Resp.Write([]byte("500 internal server error"))
+		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 
@@ -144,12 +158,15 @@ func PostNewContest(ctx *macaron.Context, contest Contest) {
 		return
 	}
 
+	//start time must not be past
+
 	//check if manager is valid
 	var manager = Users{Username: contest.Manager}
 	has, err := db.Engine.Get(&manager)
 
 	if err != nil {
-		ctx.Resp.Write([]byte("500 internal server error"))
+		//ctx.Resp.Write([]byte("500 internal server error"))
+		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 
@@ -166,8 +183,8 @@ func PostNewContest(ctx *macaron.Context, contest Contest) {
 	st, en, err := findTime(contest)
 
 	if err != nil {
-		fmt.Println(err)
-		ctx.Resp.Write([]byte("500 internal server error"))
+		//fmt.Println(err)
+		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 
@@ -175,11 +192,17 @@ func PostNewContest(ctx *macaron.Context, contest Contest) {
 	contest.ContestStartTime = st
 	contest.ContestEndTime = en
 
+	if time.Now().After(st) {
+		ctx.Resp.Write([]byte("start time must not be less than current time"))
+		return
+	}
+
 	//insert the contest into the db
 	_, err = db.Engine.Insert(&contest)
 
 	if err != nil {
-		ctx.Resp.Write([]byte("500 internal server error"))
+		//ctx.Resp.Write([]byte("500 internal server error"))
+		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 
@@ -198,13 +221,15 @@ func GetDashboard(ctx *macaron.Context) {
 
 	if err != nil {
 		fmt.Println(err)
-		ctx.Resp.Write([]byte("500 internal server error"))
+		//ctx.Resp.Write([]byte("500 internal server error"))
+		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 
 	if err := db.Engine.Where("contest_id = ?", cid).Find(&all); err != nil {
-		fmt.Println(err)
-		ctx.Resp.Write([]byte("500 internal server error"))
+		//fmt.Println(err)
+		//ctx.Resp.Write([]byte("500 internal server error"))
+		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 
@@ -212,8 +237,9 @@ func GetDashboard(ctx *macaron.Context) {
 	has, err := db.Engine.Get(&contest)
 
 	if err != nil {
-		fmt.Println(err)
-		ctx.Resp.Write([]byte("500 internal server error"))
+		//fmt.Println(err)
+		//ctx.Resp.Write([]byte("500 internal server error"))
+		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 
@@ -222,11 +248,10 @@ func GetDashboard(ctx *macaron.Context) {
 		return
 	}
 
-	//	contestStartTime, contestEndTime, err := findTime(contest)
+	//TODO: optimize timing in dashboard
 
 	ctx.Data["Contest"] = contest
 	ctx.Data["Problems"] = all
-	ctx.Data["CurrentTime"] = time.Now().Format(time.RFC3339)
 
 	//problems
 	ctx.HTML(200, "dashboard")

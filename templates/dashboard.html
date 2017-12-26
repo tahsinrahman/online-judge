@@ -54,14 +54,17 @@ p {
 </head>
 
 <body>
-    <div class="container-fluid" style="width: 90%; margin-top: 30px;">
-      <h1 id = "contest_name"></h1>
+    <div class="container-fluid" style="width: 100%; margin-top: 30px;">
       <div class="row">
-        <div class="col-md-10" id = "problem_list">
+        <div class="col-md-9" id = "problem_list">
+          <h1 id = "contest_name" class="text-center"></h1>
         </div>
-        <div class="col-md-2">
-          <p id="status"></p>
-          <p id="demo"></p>
+        <div class="col-sm-3" style="margin-top: 100px;">
+          <div class="jumbotron">
+            <p id="status"></p>
+            <p id="demo"></p>
+            <div id="update"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -71,8 +74,15 @@ p {
     var problems = {{.Problems}};
     var contest = {{.Contest}};
     var currentTime = {{.Time}};
-    console.log(currentTime);
-    console.log(contest.StartDate)
+
+    var manager = contest.Manager;
+    if(user == manager) {
+      var path = window.location.pathname;
+      $("#update").append('<br>')
+      $("#update").append('<p> <a href="' + path + '/update">Update Contest</a></p>');
+      $("#update").append('<p> <a href="' + path + '/new">Add Problem</a></p>');
+      $("#update").append('<p> <a href="' + path + '/rearrange">Rearrange Problems</a></p>');
+    }
 
     $("#contest_name").append(contest["Name"])
 
@@ -124,7 +134,8 @@ var x = setInterval(function() {
           var distanceToEnd = countDownEnd - date;
           if (distanceToEnd < 0) {
               clearInterval(x);
-              document.getElementById("demo").innerHTML = "Conteset Ended";
+              document.getElementById("status").innerHTML = "Contest Ended";
+              document.getElementById("demo").innerHTML = "";
               return;
           }
           var distanceToStart = countDownStart - date;
