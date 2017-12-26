@@ -7,17 +7,23 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <title>Online Judge</title>
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="fontawesome-all.css">
+    <link rel="stylesheet" href="/fontawesome-all.css">
     <!-- Bootstrap core CSS -->
-    <link href="css/bootstrap.min.css.map" rel="stylesheet">
-    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap.min.css.map" rel="stylesheet">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
     <!-- Material Design Bootstrap -->
-    <link href="css/mdb.min.css" rel="stylesheet">
+    <link href="/css/mdb.min.css" rel="stylesheet">
     <!-- Your custom styles (optional) -->
-    <link href="css/style.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
 
-    <script src="js/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="/js/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
 
+<style>
+p {
+  text-align: center;
+  font-size: 20px;
+}
+</style>
 
     <!--start of Navigation bar-->
     <div id="nav-placeholder"> </div>
@@ -26,11 +32,11 @@
     var loggedIn = {{.Login}};
     if(loggedIn) {
         $(function() {
-              $("#nav-placeholder").load("navLoggedIn.html");
+              $("#nav-placeholder").load("/navLoggedIn.html");
         });
     } else {
         $(function() {
-              $("#nav-placeholder").load("navLoggedOut.html");
+              $("#nav-placeholder").load("/navLoggedOut.html");
         });
     }
     </script>
@@ -38,18 +44,120 @@
 
     <!-- SCRIPTS -->
     <!-- JQuery -->
-    <script type="text/javascript" src="js/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="/js/jquery-3.2.1.min.js"></script>
     <!-- Bootstrap tooltips -->
-    <script type="text/javascript" src="js/popper.min.js"></script>
+    <script type="text/javascript" src="/js/popper.min.js"></script>
     <!-- Bootstrap core JavaScript -->
-    <script type="text/javascript" src="js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/js/bootstrap.min.js"></script>
     <!-- MDB core JavaScript -->
-    <script type="text/javascript" src="js/mdb.min.js"></script>
+    <script type="text/javascript" src="/js/mdb.min.js"></script>
 </head>
 
-
 <body>
+    <div class="container-fluid" style="width: 90%; margin-top: 30px;">
+      <h1 id = "contest_name"></h1>
+      <div class="row">
+        <div class="col-md-10" id = "problem_list">
+        </div>
+        <div class="col-md-2">
+          <p id="status"></p>
+          <p id="demo"></p>
+        </div>
+      </div>
+    </div>
 
+  <script>
+    var user = {{.Username}};
+    var problems = {{.Problems}};
+    var contest = {{.Contest}};
+    var currentTime = {{.Time}};
+    console.log(currentTime);
+    console.log(contest.StartDate)
+
+    $("#contest_name").append(contest["Name"])
+
+    for(var i = 0; problems != null && i < problems.length;i++) {
+      var link = "/contests/" + contest["ContestId"] + "/" + problems[i]["ProblemId"];
+      var x = "<br><h3><a href = " + link + ">" + problems[i]["Name"] + "</a></h3>";
+      $("#problem_list").append(x);
+    }
+  </script>
+<script>
+$(function () {
+  $.ajax({
+    type: 'GET',
+    cache: false,
+    url: location.href,
+    complete: function (req, textStatus) {
+      var dateString = req.getResponseHeader('Date');
+      if (dateString.indexOf('GMT') === -1) {
+        dateString += ' GMT';
+      }
+      var date = new Date(dateString);
+      console.log(date);
+      $('#serverTime').text(date.toString());
+    }
+  });
+});
+</script>
+
+
+<script>
+// Set the date we're counting down to
+var contest = {{.Contest}};
+var countDownStart = new Date(contest.ContestStartTime).getTime();
+var countDownEnd = new Date(contest.ContestEndTime).getTime();
+
+// Update the count down every 1 second
+var x = setInterval(function() {
+    $(function () {
+      $.ajax({
+        type: 'GET',
+        cache: false,
+        url: location.href,
+        complete: function (req, textStatus) {
+          var dateString = req.getResponseHeader('Date');
+          if (dateString.indexOf('GMT') === -1) {
+            dateString += ' GMT';
+          }
+          var date = new Date(dateString);
+          var distanceToEnd = countDownEnd - date;
+          if (distanceToEnd < 0) {
+              clearInterval(x);
+              document.getElementById("demo").innerHTML = "Conteset Ended";
+              return;
+          }
+          var distanceToStart = countDownStart - date;
+          if (distanceToStart < 0) {
+            //running
+              var distance = distanceToEnd;
+              // Time calculations for days, hours, minutes and seconds
+              var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+              var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+              var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+              var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            // Output the result in an element with id="demo"
+              document.getElementById("status").innerHTML = "Contest Running";
+              document.getElementById("demo").innerHTML = days + "d " + hours + "h " + minutes + "m " + seconds + "s ";
+              return;
+          }
+          //upcoming
+          var distance = distanceToStart;
+          var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+          var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+          var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+          // output the result in an element with id="demo"
+          document.getElementById("status").innerHTML = "Time To Start";
+          document.getElementById("demo").innerHTML = days + "d " + hours + "h " + minutes + "m " + seconds + "s ";
+        }
+      });
+    });
+
+}, 1000);
+</script>
 
 </body>
 </html>

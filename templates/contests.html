@@ -115,7 +115,6 @@
 
   <script>
     var user = {{.Username}};
-    console.log(user);
     if(user == "admin") {
         $("#auth").append('<a class="btn btn-primary" href="/contests/new" role="button">Create New</a>');
     }
@@ -126,10 +125,14 @@
     var past = {{.Past}};
     var upcoming = {{.Upcoming}};
 
-	for(var i=0;i<running.length;i++)
+   console.log(running);
+   console.log(past);
+   console.log(upcoming);
+
+	for(var i=0; running != null && i < running.length;i++)
 	{
 	    var tr="<tr>";
-      var td1='<td><a href="/contests/' + running[i]["Contest_id"] + '" class="blue-text">' +running[i]["Name"]+ "</a></td>";
+      var td1='<td><a href="/contests/' + running[i]["ContestId"] + '" class="blue-text">' +running[i]["Name"]+ "</a></td>";
 	    var td2="<td>"+running[i]["StartDate"]+"</td>";
 	    var td3="<td>"+running[i]["StartTime"]+"</td>";
 	    var td4="<td>"+running[i]["Duration"]+"</td>";
@@ -139,10 +142,10 @@
 
 	}
 
-	for(var i=0;i<upcoming.length;i++)
+	for(var i=0;upcoming != null && i<upcoming.length;i++)
 	{
 	    var tr="<tr>";
-      var td1='<td><a href="/contests/' + upcoming[i]["Contest_id"] + '" class="blue-text">' +upcoming[i]["Name"]+ "</a></td>";
+      var td1='<td><a href="/contests/' + upcoming[i]["ContestId"] + '" class="blue-text">' +upcoming[i]["Name"]+ "</a></td>";
 	    var td2="<td>"+upcoming[i]["StartDate"]+"</td>";
 	    var td3="<td>"+upcoming[i]["StartTime"]+"</td>";
 	    var td4="<td>"+upcoming[i]["Duration"]+"</td>";
@@ -152,10 +155,10 @@
 
 	}
 
-	for(var i=0;i<past.length;i++)
+	for(var i=0;past != null && i<past.length;i++)
 	{
 	    var tr="<tr>";
-      var td1='<td><a href="/contests/' + past[i]["Contest_id"] + '" class="blue-text">' +past[i]["Name"]+ "</a></td>";
+      var td1='<td><a href="/contests/' + past[i]["ContestId"] + '" class="blue-text">' +past[i]["Name"]+ "</a></td>";
 	    var td2="<td>"+past[i]["StartDate"]+"</td>";
 	    var td3="<td>"+past[i]["StartTime"]+"</td>";
 	    var td4="<td>"+past[i]["Duration"]+"</td>";

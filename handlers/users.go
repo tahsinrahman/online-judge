@@ -6,7 +6,7 @@ import (
 )
 
 type Users struct {
-	User_id  int
+	UserId   int
 	Name     string `form:"name"`
 	Username string `form:"username"`
 	Password string `form:"password"`

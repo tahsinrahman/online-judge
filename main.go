@@ -36,7 +36,7 @@ func main() {
 		m.Post("/new", binding.Bind(handlers.Contest{}), handlers.PostNewContest) //done
 
 		m.Group("/:cid", func() {
-			m.Get("/", handlers.GetContest)
+			m.Get("/", handlers.GetDashboard)
 
 			m.Get("/update", handlers.GetUpdateContest)
 			m.Put("/update", handlers.PostUpdateContest)
