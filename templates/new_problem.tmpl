@@ -265,20 +265,7 @@
 
     $('#add').click(function() {
 
-//        var inp = '<div class="a"> <div class="col md-6 form-group"> <label for="data">Input File</label> <input type="file" class="form-control-file" id="data" name="input_data[]" required="true"> </div>';
- //       var op =  '<div class="col-md-6 form-group"> <label for="data">Output File</label> <input type="file" class="form-control-file" id="data" name="output_data[]" required="true"> </div>';
-  //      var removeButton = $(<input type="button" class="remove" value="-">);
-
-//        $('#dataset').append('<div id="tahsin"><h1>asdfasfasdf</h1></div>');
-//        $('#tahsin').append(inp);
- //       $('#tahsin').append(op);
-  //      $('#tahsin').append(removeButton);
-<<<<<<< HEAD
-
           $('#dataset').append('<div class="row"><div class="col-md-5 form-group"> <label for="data">Input File</label> <input type="file" class="form-control-file" id="data" name="input_data[]" required="true"> </div><div class="col-md-5 form-group"> <label for="data">Output File</label> <input type="file" class="form-control-file" id="data" name="output_data[]" required="true"> </div><div class="col-sm-2"><br><button class="btn btn-sm btn-danger" onclick="removefunc(this)">remove</button></div></div>');
-=======
-          $('#dataset').append('<div class="row"><div class="col-md-5 form-group"> <label for="data">Input File</label> <input type="file" class="form-control-file" id="data" name="input_data[]" required="true"> </div><div class="col-md-5 form-group"> <label for="data">Output File</label> <input type="file" class="form-control-file" id="data" name="output_data[]" required="true"> </div><div class="col-md-2 form-group"><br><button onclick="removefunc(this)">remove</button></div></div>');
->>>>>>> fd7c466871856d60d5beaf5e72c568de97ba3c2e
 
     });
 
@@ -286,11 +273,7 @@
 
 <script>
 function removefunc (e) {
-<<<<<<< HEAD
-+  e.parentNode.parentNode.parentNode.removeChild(e.parentNode.parentNode);
-=======
-  e.parentNode.parentNode.removeChild(e.parentNode);
->>>>>>> fd7c466871856d60d5beaf5e72c568de97ba3c2e
+  e.parentNode.parentNode.parentNode.removeChild(e.parentNode.parentNode);
 }
 </script>
 </body>

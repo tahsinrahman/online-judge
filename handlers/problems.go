@@ -53,7 +53,7 @@ func createFile(cid string, pid string, id string, in string, file *multipart.Fi
 		return nil
 	}
 
-	cnt, err := newInputFile.Write(b)
+	_, err = newInputFile.Write(b)
 	if err != nil {
 		return err
 	}
@@ -83,20 +83,7 @@ func PostNewProblem(ctx *macaron.Context, problem Problem, dataset Dataset) {
 			return
 		}
 	}
-	/*
-		file, err := judgeData.JudgeInput.Open()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		data := make([]byte, 100)
-		_, err = file.Read(data)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		fmt.Println(string(data))
-	*/
+	ctx.Redirect("/contests/" + cid)
 }
 
 func GetUpload(ctx *macaron.Context) {
