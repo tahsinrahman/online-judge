@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/tahsinrahman/online-judge/db"
@@ -26,8 +25,9 @@ func CheckAuthentication(ctx *macaron.Context) {
 
 func CheckContestExistance(ctx *macaron.Context) {
 	cid, err := strconv.Atoi(ctx.Params(":cid"))
+	//	fmt.Println(cid, err)
 	if err != nil {
-		fmt.Println(err)
+		//		fmt.Println(err)
 		//ctx.Resp.Write([]byte("500 internal server error"))
 		ctx.Resp.Write([]byte(err.Error()))
 		return
@@ -49,13 +49,16 @@ func CheckContestExistance(ctx *macaron.Context) {
 	}
 
 	ctx.Data["Contest"] = contest
+	//	fmt.Println("end of CheckContestExistance")
+	//fmt.Println(contest)
 }
 
 func CheckManager(ctx *macaron.Context) {
+	//	fmt.Println("start of checkmanager")
 	contest, _ := ctx.Data["Contest"].(handlers.Contest)
-	fmt.Println(contest)
+	//	fmt.Println(contest, ctx.Data["Username"])
 
-	if ctx.Data["Username"] != contest.ManagerUsername {
+	if ctx.Data["Username"].(string) != contest.ManagerUsername {
 		ctx.Resp.Write([]byte("unauthorized. only contest manager can update contest"))
 		return
 	}
