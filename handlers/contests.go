@@ -11,25 +11,6 @@ import (
 	macaron "gopkg.in/macaron.v1"
 )
 
-type JudgeData struct {
-	id     int
-	input  []byte
-	output []byte
-}
-
-type Problem struct {
-	ProblemId    int
-	ContestId    int
-	OrderId      string
-	Name         string
-	Description  string
-	Input        string
-	Output       string
-	SampleInput  string
-	SampleOutput string
-	Notes        string
-}
-
 type Contest struct {
 	ContestId        int       `xorm:"pk"`
 	Name             string    `form:"name"`
@@ -150,20 +131,18 @@ func GetNewContest(ctx *macaron.Context) {
 	ctx.HTML(200, "new_contest")
 }
 
-func newContestForm(ctx *macaron.Context, contest Contest) *Contest {
+func newContestForm(ctx *macaron.Context, contest Contest) (Contest, error) {
 	//check if manager is valid
 	var manager = Users{Username: contest.Manager}
 	has, err := db.Engine.Get(&manager)
 
 	if err != nil {
 		//ctx.Resp.Write([]byte("500 internal server error"))
-		ctx.Resp.Write([]byte(err.Error()))
-		return nil
+		return contest, err
 	}
 
 	if has == false {
-		ctx.Resp.Write([]byte("manager not found"))
-		return nil
+		return contest, errors.New("manager not found")
 	}
 
 	//use namanger name instead of handle
@@ -176,8 +155,7 @@ func newContestForm(ctx *macaron.Context, contest Contest) *Contest {
 
 	if err != nil {
 		//fmt.Println(err)
-		ctx.Resp.Write([]byte(err.Error()))
-		return nil
+		return contest, err
 	}
 
 	//set data according to date format in db
@@ -185,11 +163,10 @@ func newContestForm(ctx *macaron.Context, contest Contest) *Contest {
 	contest.ContestEndTime = en
 
 	if time.Now().After(st) {
-		ctx.Resp.Write([]byte("start time must not be less than current time"))
-		return nil
+		return contest, errors.New("start time must not be less than current time")
 	}
 
-	return &contest
+	return contest, nil
 }
 
 //route: /contests/new POST
@@ -201,14 +178,15 @@ func PostNewContest(ctx *macaron.Context, contest Contest) {
 		return
 	}
 
-	newContest := newContestForm(ctx, contest)
+	newContest, err := newContestForm(ctx, contest)
 
-	if newContest == nil {
+	if err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 
 	//insert the contest into the db
-	_, err := db.Engine.Insert(newContest)
+	_, err = db.Engine.Insert(&newContest)
 
 	if err != nil {
 		//ctx.Resp.Write([]byte("500 internal server error"))
@@ -227,12 +205,15 @@ func GetDashboard(ctx *macaron.Context) {
 	//checkigs are done in middleware
 
 	var all []Problem
-	if err := db.Engine.Where("contest_id = ?", ctx.Params(":cid")).Find(&all); err != nil {
-		//fmt.Println(err)
-		//ctx.Resp.Write([]byte("500 internal server error"))
-		ctx.Resp.Write([]byte(err.Error()))
-		return
-	}
+	/*
+		if err := db.Engine.Where("contest_id = ?", ctx.Params(":cid")).Find(&all); err != nil {
+			//fmt.Println(err)
+			//ctx.Resp.Write([]byte("500 internal server error"))
+			ctx.Resp.Write([]byte(err.Error()))
+			return
+		}
+		fmt.Println("bbbbbbbbbbbbbbbbb")
+	*/
 
 	//TODO: optimize timing in dashboard
 
@@ -251,15 +232,16 @@ func GetUpdateContest(ctx *macaron.Context) {
 //route: /contests/:cid/update POST
 //update contest info into db
 func PostUpdateContest(ctx *macaron.Context, contest Contest) {
-	newContest := newContestForm(ctx, contest)
+	newContest, err := newContestForm(ctx, contest)
 
-	if newContest == nil {
+	if err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 
 	cid := ctx.Params(":cid")
 	//update db
-	_, err := db.Engine.Id(cid).Update(*newContest)
+	_, err = db.Engine.Id(cid).Update(&newContest)
 
 	if err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
@@ -274,33 +256,6 @@ func PostUpdateContest(ctx *macaron.Context, contest Contest) {
 //if logged in, show solved in green
 func DeleteContest(ctx *macaron.Context) {
 	fmt.Println("GetDashboard")
-}
-
-//route: /contests/:cid/:pid
-//show problem
-//show submit button if eligible and logged in
-func GetProblem(ctx *macaron.Context) {
-	fmt.Println("GetProblem")
-}
-
-//route: /contests/:cid/:pid PUT
-func UpdateProblem(ctx *macaron.Context) {
-	fmt.Println("GetProblem")
-}
-
-//route: /contests/:cid/:pid DELETE
-func DeleteProblem(ctx *macaron.Context) {
-	fmt.Println("GetProblem")
-}
-
-//route: /contests/:cid/:pid POST
-//submit problem if eligible and logged in
-func PostSubmit(ctx *macaron.Context) {
-	fmt.Println("Post Submit")
-}
-
-func SubmitProblem(ctx *macaron.Context) {
-	fmt.Println("Post Submit")
 }
 
 //route: /contests/:cid/rank

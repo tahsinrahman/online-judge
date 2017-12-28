@@ -16,7 +16,7 @@ func main() {
 	//macaron engine
 	m := macaron.Classic()
 
-	//middlewares
+	//middlewares for every route
 	m.Use(macaron.Renderer())              //for html rendering
 	m.Use(middlewares.CheckAuthentication) //check cookie
 
@@ -28,6 +28,9 @@ func main() {
 	m.Post("/signin", binding.Bind(handlers.Users{}), handlers.PostSignIn) //done
 	m.Get("/signout", handlers.GetSignOut)                                 //done
 
+	//	m.Get("/upload", handlers.GetUpload) //done
+	//	m.Post("/upload", handlers.Upload)   //done
+
 	//handlers for contests
 	m.Group("/contests", func() {
 		m.Get("/", handlers.GetAllContests) //done
@@ -37,17 +40,23 @@ func main() {
 
 		m.Group("/:cid", func() {
 			m.Get("/", handlers.GetDashboard) //done
-			m.Delete("/", middlewares.CheckManager, handlers.DeleteContest)
 
-			m.Get("/update", middlewares.CheckManager, handlers.GetUpdateContest)
-			m.Post("/update", middlewares.CheckManager, binding.Bind(handlers.Contest{}), handlers.PostUpdateContest)
+			m.Group("", func() {
+				m.Delete("/", handlers.DeleteContest) //TODO:
 
-			m.Get("/:pid", handlers.GetProblem)
-			//m.Get("/:pid/update", handlers.GetUpdateProblem)
-			//m.Get("/:pid/new", handlers.newProblem)
-			m.Put("/:pid", handlers.UpdateProblem)
-			m.Delete("/:pid", handlers.DeleteProblem)
-			m.Post("/:pid/submit", handlers.SubmitProblem)
+				m.Get("/update", handlers.GetUpdateContest)                                     //done
+				m.Post("/update", binding.Bind(handlers.Contest{}), handlers.PostUpdateContest) //done
+
+				m.Get("/new", handlers.GetNewProblem)                                                                                //done
+				m.Post("/new", binding.Bind(handlers.Problem{}), binding.MultipartForm(handlers.Dataset{}), handlers.PostNewProblem) //TODO:db
+			}, middlewares.CheckManager)
+
+			m.Group("/:pid", func() {
+				m.Get("/", handlers.GetProblem)
+				m.Put("/:pid", handlers.UpdateProblem)
+				m.Delete("/:pid", handlers.DeleteProblem)
+				m.Post("/:pid/submit", handlers.SubmitProblem)
+			}) //need to add middleware to check if problem exists
 
 			m.Get("/rank", handlers.GetRank)
 			m.Get("/allsubmissions", handlers.GetAllSubmissions)
