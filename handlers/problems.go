@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"io/ioutil"
 	"mime/multipart"
 	"os"
 	"strconv"
@@ -42,18 +43,17 @@ func createFile(cid string, pid string, id string, in string, file *multipart.Fi
 	}
 	defer newInputFile.Close()
 
-	tmp, err := file.Open()
+	f, err := file.Open()
 	if err != nil {
-		return err
+		return nil
 	}
 
-	var judgeInputFile []byte
-	_, err = tmp.Read(judgeInputFile)
+	b, err := ioutil.ReadAll(f)
 	if err != nil {
-		return err
+		return nil
 	}
 
-	_, err = newInputFile.Write(judgeInputFile)
+	cnt, err := newInputFile.Write(b)
 	if err != nil {
 		return err
 	}
