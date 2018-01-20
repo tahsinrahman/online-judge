@@ -47,7 +47,8 @@ func PostSignUp(ctx *macaron.Context, user Users) {
 	has, err := db.Engine.Get(&tmpUser)
 
 	if err != nil {
-		ctx.Resp.Write([]byte("500 internal server error"))
+		ctx.Resp.Write([]byte(err.Error()))
+		//		ctx.Resp.Write([]byte("500 internal server error"))
 		return
 	}
 
