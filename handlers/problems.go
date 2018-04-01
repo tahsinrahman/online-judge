@@ -7,18 +7,23 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/tahsinrahman/online-judge/db"
 	macaron "gopkg.in/macaron.v1"
 )
 
+//Dataset has a set of input and output files
+//each set has associated point values TODO
 type Dataset struct {
 	JudgeInput  []*multipart.FileHeader `form:"input_data[]"`
 	JudgeOutput []*multipart.FileHeader `form:"output_data[]"`
+	//Point       []int                   `form:"point[]"`
 }
 
+//structure of each problem
+//judge data is seperated? Should be connected?
 type Problem struct {
 	ProblemId    int
 	ContestId    int
-	OrderId      string
 	Name         string  `form:"name"`
 	Description  string  `form:"description"`
 	Input        string  `form:"input"`
@@ -26,14 +31,20 @@ type Problem struct {
 	SampleInput  string  `form:"sample_input"`
 	SampleOutput string  `form:"sample_output"`
 	TimeLimit    float64 `form:"timelimit"`
-	Notes        string  `form:"notes`
+	Notes        string  `form:"notes"`
+	//OrderId      string
 }
 
 //route: /contests/:cid/new GET
+//shows the html for for a new problem
 func GetNewProblem(ctx *macaron.Context) {
 	ctx.HTML(200, "new_problem")
 }
 
+//gets judge data as a file
+//save them into local storage
+//`dataset/cid/pid/in_id`
+//`dataset/cid/pid/out_id`
 func createFile(cid string, pid string, id string, in string, file *multipart.FileHeader) error {
 	path := "dataset/" + cid + "/" + pid + "/" + in + "_" + id
 	newInputFile, err := os.Create(path)
@@ -61,11 +72,21 @@ func createFile(cid string, pid string, id string, in string, file *multipart.Fi
 }
 
 //route: /contests/:cid/new POST
+//gets problem info as formdata
+//inserts infos into db and save files in system storage
+//finally redirects to `contest/cid`
 func PostNewProblem(ctx *macaron.Context, problem Problem, dataset Dataset) {
 	contest := ctx.Data["Contest"].(Contest)
 
 	problem.ContestId = contest.ContestId
-	problem.ProblemId = contest.ProblemCount + 1 //TODO
+	problem.ProblemId = contest.ProblemCount + 1
+	contest.ProblemCount++
+
+	//update contest in db
+	db.Engine.Id(contest.ContestId).Update(&contest)
+
+	//insert problem into db
+	db.Engine.Insert(&problem)
 
 	cid := strconv.Itoa(contest.ContestId)
 	pid := strconv.Itoa(problem.ProblemId)
@@ -73,6 +94,7 @@ func PostNewProblem(ctx *macaron.Context, problem Problem, dataset Dataset) {
 	//create a new direcory
 	os.MkdirAll("dataset/"+cid+"/"+pid, 0755)
 
+	//save each input/output file in system storage
 	for i := 0; i < len(dataset.JudgeInput); i++ {
 		if err := createFile(cid, pid, strconv.Itoa(i), "in", dataset.JudgeInput[i]); err != nil {
 			ctx.Resp.Write([]byte(err.Error()))
@@ -83,6 +105,8 @@ func PostNewProblem(ctx *macaron.Context, problem Problem, dataset Dataset) {
 			return
 		}
 	}
+
+	//finally redirecto to `contests/cid`
 	ctx.Redirect("/contests/" + cid)
 }
 

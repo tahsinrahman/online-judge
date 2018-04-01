@@ -11,6 +11,7 @@ import (
 	macaron "gopkg.in/macaron.v1"
 )
 
+//structure of contest
 type Contest struct {
 	ContestId        int       `xorm:"pk"`
 	Name             string    `form:"name"`
@@ -25,6 +26,7 @@ type Contest struct {
 	ProblemCount     int
 }
 
+//converts to time.Time from string
 func findTime(contest Contest) (time.Time, time.Time, error) {
 	startDate := strings.Split(contest.StartDate, "-")
 	startTime := strings.Split(contest.StartTime, ":")
@@ -86,7 +88,6 @@ func findTime(contest Contest) (time.Time, time.Time, error) {
 //route: /contests
 //show all contests, sorted by time TODO: sorted by time
 func GetAllContests(ctx *macaron.Context) {
-	//show all contests from mysql to html
 	var all, running, upcoming, past []Contest
 
 	if err := db.Engine.Find(&all); err != nil {
@@ -201,25 +202,31 @@ func PostNewContest(ctx *macaron.Context, contest Contest) {
 }
 
 //route: /contests/:cid
-//show dashboard
+//show dashboard/list of all problems if (contest is running && user has permission) || user = manager
 //if logged in, show solved in green
 func GetDashboard(ctx *macaron.Context) {
 	//checkigs are done in middleware
 
+	contest := ctx.Data["Contest"].(Contest)
+
 	var all []Problem
-	/*
-		if err := db.Engine.Where("contest_id = ?", ctx.Params(":cid")).Find(&all); err != nil {
-			//fmt.Println(err)
-			//ctx.Resp.Write([]byte("500 internal server error"))
-			ctx.Resp.Write([]byte(err.Error()))
-			return
-		}
-		fmt.Println("bbbbbbbbbbbbbbbbb")
-	*/
+	if err := db.Engine.Where("contest_id = ?", ctx.Params(":cid")).Find(&all); err != nil {
+		//fmt.Println(err)
+		//ctx.Resp.Write([]byte("500 internal server error"))
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
 
 	//TODO: optimize timing in dashboard
 
-	ctx.Data["Problems"] = all
+	//user == manager
+	//user has permission && contest is running
+	if ctx.Data["Username"].(string) == contest.ManagerUsername {
+		ctx.Data["Problems"] = all
+	} else if time.Now().After(contest.ContestStartTime) {
+		//check user has permission
+		ctx.Data["Problems"] = all
+	}
 
 	//problems
 	ctx.HTML(200, "dashboard")
