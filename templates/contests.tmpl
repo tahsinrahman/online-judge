@@ -132,7 +132,7 @@
 	for(var i=0; running != null && i < running.length;i++)
 	{
 	    var tr="<tr>";
-      var td1='<td><a href="/contests/' + running[i]["ContestId"] + '" class="blue-text">' +running[i]["Name"]+ "</a></td>";
+      var td1='<td><a href="/contests/' + running[i]["Id"] + '" class="blue-text">' +running[i]["Name"]+ "</a></td>";
 	    var td2="<td>"+running[i]["StartDate"]+"</td>";
 	    var td3="<td>"+running[i]["StartTime"]+"</td>";
 	    var td4="<td>"+running[i]["Duration"]+"</td>";
@@ -145,7 +145,7 @@
 	for(var i=0;upcoming != null && i<upcoming.length;i++)
 	{
 	    var tr="<tr>";
-      var td1='<td><a href="/contests/' + upcoming[i]["ContestId"] + '" class="blue-text">' +upcoming[i]["Name"]+ "</a></td>";
+      var td1='<td><a href="/contests/' + upcoming[i]["Id"] + '" class="blue-text">' +upcoming[i]["Name"]+ "</a></td>";
 	    var td2="<td>"+upcoming[i]["StartDate"]+"</td>";
 	    var td3="<td>"+upcoming[i]["StartTime"]+"</td>";
 	    var td4="<td>"+upcoming[i]["Duration"]+"</td>";
@@ -158,7 +158,7 @@
 	for(var i=0;past != null && i<past.length;i++)
 	{
 	    var tr="<tr>";
-      var td1='<td><a href="/contests/' + past[i]["ContestId"] + '" class="blue-text">' +past[i]["Name"]+ "</a></td>";
+      var td1='<td><a href="/contests/' + past[i]["Id"] + '" class="blue-text">' +past[i]["Name"]+ "</a></td>";
 	    var td2="<td>"+past[i]["StartDate"]+"</td>";
 	    var td3="<td>"+past[i]["StartTime"]+"</td>";
 	    var td4="<td>"+past[i]["Duration"]+"</td>";

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>Online Judge</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="/fontawesome-all.css">
+    <!-- Bootstrap core CSS -->
+    <link href="/css/bootstrap.min.css.map" rel="stylesheet">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Material Design Bootstrap -->
+    <link href="/css/mdb.min.css" rel="stylesheet">
+    <!-- Your custom styles (optional) -->
+    <link href="/css/style.css" rel="stylesheet">
+
+    <script src="/js/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+
+<style>
+p {
+  text-align: center;
+  font-size: 20px;
+}
+</style>
+
+    <!--start of Navigation bar-->
+    <div id="nav-placeholder"> </div>
+
+    <script>
+    var loggedIn = {{.Login}};
+    if(loggedIn) {
+        $(function() {
+              $("#nav-placeholder").load("/navLoggedIn.html");
+        });
+    } else {
+        $(function() {
+              $("#nav-placeholder").load("/navLoggedOut.html");
+        });
+    }
+    </script>
+    <!--end of Navigation bar-->
+
+    <!-- SCRIPTS -->
+    <!-- JQuery -->
+    <script type="text/javascript" src="/js/jquery-3.2.1.min.js"></script>
+    <!-- Bootstrap tooltips -->
+    <script type="text/javascript" src="/js/popper.min.js"></script>
+    <!-- Bootstrap core JavaScript -->
+    <script type="text/javascript" src="/js/bootstrap.min.js"></script>
+    <!-- MDB core JavaScript -->
+    <script type="text/javascript" src="/js/mdb.min.js"></script>
+</head>
+
+<body>
+  <div class="container-fluid row" style="width: 100%; margin-top: 30px;">
+    <div class="container-fluid col-md-8 jumbotron">
+      <h1 class="h2-responsive text-left">{{.Problem.Name}}</h1><br>
+      Time Limit: {{.Problem.TimeLimit}}<br>
+      Memory Limit: {{.Problem.MemoryLimit}}<br>
+      <hr class="my-1">
+      <br>
+
+      <h3 class="h4-responsive">Description</h3><br>
+      <div class="text-left" id="description"></div>
+
+      <br><h4 class="h4-responsive">Input Specification</h4><br>
+      <div class="container-fluid" id="input"></div>
+
+      <br><h4 class="h4-responsive">Output Specification</h4><br>
+      <p id="output"> </p>
+
+      <br><h4 class="h4-responsive">Sample Input</h4> <br>
+      <p id=sample_input></p>
+
+      <br><h4 class="h4-responsive">Sample Output</h4>
+      <br>
+      <p id=sample_output></p>
+
+      <br><h4 class="h4-responsive">Notes</h4>
+      <br>
+      <p id=notes></p>
+    </div>
+    <div class="col-md-3 jumbotron" style="margin-top: 30;">
+      <p id="status"> </p>
+      <p id="demo"> </p>
+      <p id="update"> </p>
+    </div>
+  </div>
+
+<script>
+  $("#description").append("{{.Problem.Description}}")
+  $("#notes").append("{{.Problem.Notes}}")
+  $("#sample_output").append("{{.Problem.SampleOutput}}")
+  $("#sample_input").append("{{.Problem.SampleInput}}")
+  $("#output").append("{{.Problem.Output}}")
+  $("#input").append("{{.Problem.Input}}")
+</script>
+
+  <script>
+    var user = {{.Username}};
+    var problems = {{.Problems}};
+    var contest = {{.Contest}};
+    var currentTime = {{.Time}};
+
+    var manager = contest.Manager;
+
+    $("#contest_name").append(contest["Name"])
+  </script>
+
+
+<script>
+$(function () {
+  $.ajax({
+    type: 'GET',
+    cache: false,
+    url: location.href,
+    complete: function (req, textStatus) {
+      var dateString = req.getResponseHeader('Date');
+      if (dateString.indexOf('GMT') === -1) {
+        dateString += ' GMT';
+      }
+      var date = new Date(dateString);
+      console.log(date);
+      $('#serverTime').text(date.toString());
+    }
+  });
+});
+</script>
+
+
+<script>
+// Set the date we're counting down to
+var contest = {{.Contest}};
+var countDownStart = new Date(contest.ContestStartTime).getTime();
+var countDownEnd = new Date(contest.ContestEndTime).getTime();
+
+// Update the count down every 1 second
+var x = setInterval(function() {
+    $(function () {
+      $.ajax({
+        type: 'GET',
+        cache: false,
+        url: location.href,
+        complete: function (req, textStatus) {
+          var dateString = req.getResponseHeader('Date');
+          if (dateString.indexOf('GMT') === -1) {
+            dateString += ' GMT';
+          }
+          var date = new Date(dateString);
+          var distanceToEnd = countDownEnd - date;
+          if (distanceToEnd < 0) {
+              clearInterval(x);
+              document.getElementById("status").innerHTML = "Contest Ended";
+              document.getElementById("demo").innerHTML = "";
+              return;
+          }
+          var distanceToStart = countDownStart - date;
+          if (distanceToStart < 0) {
+            //running
+              var distance = distanceToEnd;
+              // Time calculations for days, hours, minutes and seconds
+              var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+              var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+              var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+              var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            // Output the result in an element with id="demo"
+              document.getElementById("status").innerHTML = "Contest Running";
+              document.getElementById("demo").innerHTML = days + "d " + hours + "h " + minutes + "m " + seconds + "s ";
+              return;
+          }
+          //upcoming
+          var distance = distanceToStart;
+          var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+          var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+          var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+          // output the result in an element with id="demo"
+          document.getElementById("status").innerHTML = "Time To Start";
+          document.getElementById("demo").innerHTML = days + "d " + hours + "h " + minutes + "m " + seconds + "s ";
+        }
+      });
+    });
+
+}, 1000);
+</script>
+
+</body>
+</html>
