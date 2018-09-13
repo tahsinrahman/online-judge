@@ -106,7 +106,7 @@
       var path = window.location.pathname;
       var contest = {{.Contest}};
       $('#form').attr({
-        'action': '/contests/' + contest["ContestId"] + '/update',
+        'action': '/contests/' + contest["Id"] + '/update',
         'method': 'post'
       });
     });

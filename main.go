@@ -35,8 +35,8 @@ func main() {
 	m.Group("/contests", func() {
 		m.Get("/", handlers.GetAllContests) //done
 
-		m.Get("/new", handlers.GetNewContest)                                     //done
-		m.Post("/new", binding.Bind(handlers.Contest{}), handlers.PostNewContest) //done
+		m.Get("/new", handlers.GetNewContest)                                  //done
+		m.Post("/new", binding.Bind(handlers.Contest{}), handlers.PostContest) //done
 
 		m.Group("/:cid", func() {
 			m.Get("/", handlers.GetDashboard) //done
@@ -44,25 +44,28 @@ func main() {
 			m.Group("", func() {
 				m.Delete("/", handlers.DeleteContest) //TODO:
 
-				m.Get("/update", handlers.GetUpdateContest)                                     //done
-				m.Post("/update", binding.Bind(handlers.Contest{}), handlers.PostUpdateContest) //done
+				m.Get("/update", handlers.GetUpdateContest)                              //done
+				m.Post("/update", binding.Bind(handlers.Contest{}), handlers.PutContest) //done
 
-				m.Get("/new", handlers.GetNewProblem)                                                                                //done
-				m.Post("/new", binding.Bind(handlers.Problem{}), binding.MultipartForm(handlers.Dataset{}), handlers.PostNewProblem) //TODO:db
+				m.Get("/new", handlers.GetNewProblem)                                                                             //done
+				m.Post("/new", binding.Bind(handlers.Problem{}), binding.MultipartForm(handlers.Dataset{}), handlers.PostProblem) //TODO:db
 			}, middlewares.CheckManager)
 
 			m.Group("/:pid", func() {
 				m.Get("/", handlers.GetProblem)
-				m.Put("/:pid", handlers.UpdateProblem)
+				m.Get("/update", handlers.UpdateProblem)
+				m.Post("/update", binding.Bind(handlers.Problem{}), binding.MultipartForm(handlers.Dataset{}), handlers.PutPostProblem)
 				m.Delete("/:pid", handlers.DeleteProblem)
 				m.Post("/:pid/submit", handlers.SubmitProblem)
-			}) //need to add middleware to check if problem exists
+			}, middlewares.CheckProblem) //need to add middleware to check if problem exists
 
 			m.Get("/rank", handlers.GetRank)
 			m.Get("/allsubmissions", handlers.GetAllSubmissions)
 			m.Get("/mysubmissions", handlers.GetMySubmissions)
 		}, middlewares.CheckContestExistance)
 	})
+
+	handlers.Init()
 
 	//starting the server
 	m.Run()

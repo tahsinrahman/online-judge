@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -11,9 +12,9 @@ import (
 	macaron "gopkg.in/macaron.v1"
 )
 
-//structure of contest
+//Contest format
 type Contest struct {
-	ContestId        int       `xorm:"pk"`
+	Id               int64
 	Name             string    `form:"name"`
 	StartDate        string    `form:"date"` //used to get data from form
 	StartTime        string    `form:"time"` //used to get data from form
@@ -22,7 +23,6 @@ type Contest struct {
 	ContestEndTime   time.Time //saved in mysql after processing formdata
 	Manager          string    `form:"manager"`
 	ManagerId        int
-	ManagerUsername  string
 	ProblemCount     int
 }
 
@@ -133,7 +133,7 @@ func GetNewContest(ctx *macaron.Context) {
 	ctx.HTML(200, "new_contest")
 }
 
-func newContestForm(ctx *macaron.Context, contest Contest) (Contest, error) {
+func newContestForm(ctx *macaron.Context, contest Contest, update bool) (Contest, error) {
 	//check if manager is valid
 	var manager = Users{Username: contest.Manager}
 	has, err := db.Engine.Get(&manager)
@@ -148,9 +148,8 @@ func newContestForm(ctx *macaron.Context, contest Contest) (Contest, error) {
 	}
 
 	//use namanger name instead of handle
-	contest.Manager = manager.Name
+	contest.Manager = manager.Username
 	contest.ManagerId = manager.UserId
-	contest.ManagerUsername = manager.Username
 
 	//update start and end time
 	st, en, err := findTime(contest)
@@ -164,7 +163,12 @@ func newContestForm(ctx *macaron.Context, contest Contest) (Contest, error) {
 	contest.ContestStartTime = st
 	contest.ContestEndTime = en
 
-	if time.Now().After(st) {
+	log.Println("============", contest)
+
+	log.Println(time.Now())
+	log.Println(st)
+	log.Println(en)
+	if !update && time.Now().After(st) {
 		return contest, errors.New("start time must not be less than current time")
 	}
 
@@ -173,26 +177,28 @@ func newContestForm(ctx *macaron.Context, contest Contest) (Contest, error) {
 
 //route: /contests/new POST
 //create a new contest, admin must be logged in
-func PostNewContest(ctx *macaron.Context, contest Contest) {
+func PostContest(ctx *macaron.Context, contest Contest) {
 	//only admin has this privilage
 	if ctx.Data["Username"] != "admin" {
 		ctx.Resp.Write([]byte("unauthorized. only admin can create a new contest"))
 		return
 	}
 
-	newContest, err := newContestForm(ctx, contest)
+	newContest, err := newContestForm(ctx, contest, false)
 
 	if err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 
+	log.Println("===================", newContest)
+
 	//insert the contest into the db
 	_, err = db.Engine.Insert(&newContest)
 
 	if err != nil {
 		//ctx.Resp.Write([]byte("500 internal server error"))
-		ctx.Resp.Write([]byte(err.Error()))
+		ctx.Resp.Write([]byte("error here " + err.Error()))
 		return
 	}
 
@@ -221,7 +227,7 @@ func GetDashboard(ctx *macaron.Context) {
 
 	//user == manager
 	//user has permission && contest is running
-	if ctx.Data["Username"].(string) == contest.ManagerUsername {
+	if ctx.Data["Username"] != nil && ctx.Data["Username"].(string) == contest.Manager {
 		ctx.Data["Problems"] = all
 	} else if time.Now().After(contest.ContestStartTime) {
 		//check user has permission
@@ -240,8 +246,8 @@ func GetUpdateContest(ctx *macaron.Context) {
 
 //route: /contests/:cid/update POST
 //update contest info into db
-func PostUpdateContest(ctx *macaron.Context, contest Contest) {
-	newContest, err := newContestForm(ctx, contest)
+func PutContest(ctx *macaron.Context, contest Contest) {
+	newContest, err := newContestForm(ctx, contest, true)
 
 	if err != nil {
 		ctx.Resp.Write([]byte(err.Error()))

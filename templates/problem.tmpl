@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>Online Judge</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="/fontawesome-all.css">
+    <!-- Bootstrap core CSS -->
+    <link href="/css/bootstrap.min.css.map" rel="stylesheet">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Material Design Bootstrap -->
+    <link href="/css/mdb.min.css" rel="stylesheet">
+    <!-- Your custom styles (optional) -->
+    <link href="/css/style.css" rel="stylesheet">
+
+    <script src="/js/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+
+
+  <div id="nav-placeholder">
+    <nav class="mb-3 navbar navbar-expand-lg navbar-dark elegant-color">
+        <a class="navbar-brand" href="/">Online-Judge</a>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent-4">
+            <ul id="navitem" class="navbar-nav mr-auto">
+                <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
+                <a class="nav-link" href="/contests">Contests <span class="sr-only">(current)</span></a>
+            </ul>
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="#"><i class="fa fa-envelope"></i> Contact <span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item dropdown"> <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink-4" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-user"></i> Profile </a>
+                  <div class="dropdown-menu dropdown-menu-right dropdown-cyan" aria-labelledby="navbarDropdownMenuLink-4">
+                      <a class="dropdown-item" href="#">My account</a>
+                      <a class="dropdown-item" href="/signout">Log out</a>
+                  </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+  </div>
+
+    <script>
+    var loggedIn = {{.Login}};
+    if(loggedIn) {
+        $(function() {
+            //$("#nav-placeholder").load("/navLoggedIn.html");
+            var contset = {{.Contest}}
+            console.log(contest["Id"]);
+            $("#navitem").append('<a class="nav-link" href="/contests/' + contest["Id"] + '">Dashboard<span class="sr-only">(current)</span></a>');
+        });
+    } else {
+        $(function() {
+            $("#nav-placeholder").load("/navLoggedOut.html");
+        });
+    }
+    </script>
+    <!--end of Navigation bar-->
+
+    <!-- SCRIPTS -->
+    <!-- JQuery -->
+    <script type="text/javascript" src="/js/jquery-3.2.1.min.js"></script>
+    <!-- Bootstrap tooltips -->
+    <script type="text/javascript" src="/js/popper.min.js"></script>
+    <!-- Bootstrap core JavaScript -->
+    <script type="text/javascript" src="/js/bootstrap.min.js"></script>
+    <!-- MDB core JavaScript -->
+    <script type="text/javascript" src="/js/mdb.min.js"></script>
+</head>
+
+<script>
+    var problem = {{.Problem}}
+</script>
+
+<body>
+<div class="row container-fluid">
+  <div class="col-md-9 jumbotron container-fluid" style="width: 100%; margin-top: 30px;">
+    <h1 class="h1-responsive text-left">{{.Problem.Name}}</h1><br>
+
+    Time Limit: {{.Problem.TimeLimit}}<br>
+    Memory Limit: {{.Problem.MemoryLimit}}<br>
+    <hr class="my-1"><br>
+
+    <h3 class="h3-responsive">Description</h3><br>
+    <div id="description"></div>
+
+    <br><h3 class="h3-responsive">Input Specification</h3> <br>
+    <div id="input"></div>
+
+    <br><h3 class="h3-responsive">Output Specification</h3> <br>
+    <div id="input"></div>
+
+    <br><h3 class="h3-responsive">Sample Input</h3> <br>
+    <div id="sample_input"></div>
+
+    <br><h3 class="h3-responsive">Sample Output</h3> <br>
+    <div id="sample_output"></div>
+
+    <br><h3 class="h3-responsive">Notes</h3> <br>
+    <div id="notes"></div>
+  </div>
+  <div class="container col-md-2 text-left" style="margin-top: 30px; margin-right: 20px;">
+    <div class="row jumbotron">
+      <p id="status"> </p>
+      <p id="demo"> </p>
+      <p id="update"> </p>
+    </div>
+    <div>
+</di
+    v>
+  </div>
+</div>
+
+<script>
+  $("#input").append("{{.Problem.Input}}")
+  $("#description").append("{{.Problem.Description}}")
+  $("#output").append("{{.Problem.Output}}")
+  $("#notes").append("{{.Problem.Notes}}")
+  $("#sample_output").append("{{.Problem.SampleOutput}}")
+  $("#sample_input").append("{{.Problem.SampleInput}}")
+</script>
+
+  <script>
+    var user = {{.Username}};
+    var problems = {{.Problems}};
+    var contest = {{.Contest}};
+    var currentTime = {{.Time}};
+
+    var manager = contest.Manager;
+    if(user == manager) {
+      var path = window.location.pathname;
+      $("#update").append('<br>')
+      $("#update").append('<p> <a href="' + path + '/update">Update Problem</a></p>');
+    }
+
+    $("#contest_name").append(contest["Name"])
+
+    for(var i = 0; problems != null && i < problems.length;i++) {
+      var link = "/contests/" + contest["ContestId"] + "/" + problems[i]["ProblemId"];
+      var x = "<br><h3><a href = " + link + ">" + problems[i]["Name"] + "</a></h3>";
+      $("#problem_list").append(x);
+    }
+  </script>
+<script>
+$(function () {
+  $.ajax({
+    type: 'GET',
+    cache: false,
+    url: location.href,
+    complete: function (req, textStatus) {
+      var dateString = req.getResponseHeader('Date');
+      if (dateString.indexOf('GMT') === -1) {
+        dateString += ' GMT';
+      }
+      var date = new Date(dateString);
+      console.log(date);
+      $('#serverTime').text(date.toString());
+    }
+  });
+});
+</script>
+
+
+<script>
+// Set the date were counting down to
+var contest = {{.Contest}};
+var countDownStart = new Date(contest.ContestStartTime).getTime();
+var countDownEnd = new Date(contest.ContestEndTime).getTime();
+
+// Update the count down every 1 second
+var x = setInterval(function() {
+    $(function () {
+      $.ajax({
+        type: 'GET',
+        cache: false,
+        url: location.href,
+        complete: function (req, textStatus) {
+          var dateString = req.getResponseHeader('Date');
+          if (dateString.indexOf('GMT') === -1) {
+            dateString += ' GMT';
+          }
+          var date = new Date(dateString);
+          var distanceToEnd = countDownEnd - date;
+          if (distanceToEnd < 0) {
+              clearInterval(x);
+              document.getElementById("status").innerHTML = "Contest Ended";
+              document.getElementById("demo").innerHTML = "";
+              return;
+          }
+          var distanceToStart = countDownStart - date;
+          if (distanceToStart < 0) {
+            //running
+              var distance = distanceToEnd;
+              // Time calculations for days, hours, minutes and seconds
+              var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+              var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+              var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+              var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            // Output the result in an element with id="demo"
+              document.getElementById("status").innerHTML = "Contest Running";
+              document.getElementById("demo").innerHTML = days + "d " + hours + "h " + minutes + "m " + seconds + "s ";
+              return;
+          }
+          //upcoming
+          var distance = distanceToStart;
+          var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+          var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+          var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+          // output the result in an element with id="demo"
+          document.getElementById("status").innerHTML = "Time To Start";
+          document.getElementById("demo").innerHTML = days + "d " + hours + "h " + minutes + "m " + seconds + "s ";
+        }
+      });
+    });
+
+}, 1000);
+</script>
+
+</body>

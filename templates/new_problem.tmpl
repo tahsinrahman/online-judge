@@ -25,8 +25,7 @@
       if(loggedIn) {
         $(function() {
           $("#nav-placeholder").load("/navLoggedIn.html");
-        }
-         );
+        });
       }
       else {
         $(function() {
@@ -199,27 +198,32 @@
 
       <!-- description -->
       <div class="md-form">
+          <br><br>
         <textarea class="md-textarea scrollbar-light-blue" type="text" style="max-height:300px; min-height:300px; overflow-y:scroll" id="description" name="description" rows="100" cols="100" required="true" ></textarea>
         <label for="description" class="">Problem Description </label>
       </div><br>
 
       <!-- input -->
       <div class="md-form">
+          <br><br>
         <textarea class="md-textarea scrollbar-light-blue" type="text" style="overflow-y:scroll" id="input" name="input" required="true"></textarea>
         <label for="input" class="">Input</label>
       </div><br>
 
       <!--  output -->
       <div class="md-form">
+          <br><br>
         <textarea class="md-textarea scrollbar-light-blue" type="text" style="overflow-y:scroll" id="output" name="output" required="true"></textarea>
         <label for="output" class="">Output</label>
       </div><br>
 
       <!-- sample input and output -->
+          <br><br>
       <div class="row">
         <div class="col-md-6">
           <!-- sample input -->
           <div class="md-form">
+          <br><br>
             <textarea class="md-textarea scrollbar-light-blue" type="text" style="overflow-y:scroll" id="sample_input" name="sample_input" required="true" ></textarea>
             <label for="sample_input" class="">Sample Input</label>
           </div><br>
@@ -227,6 +231,7 @@
         <div class="col-md-6">
           <!--  sample output -->
           <div class="md-form">
+          <br><br>
             <textarea class="md-textarea scrollbar-light-blue" type="text" style="overflow-y:scroll" id="sample_output" name="sample_output" required="true"></textarea>
             <label for="sample_output" class="">Sample Output</label>
           </div><br>
@@ -235,7 +240,8 @@
 
       <!-- notes -->
       <div class="md-form">
-        <textarea class="md-textarea scrollbar-light-blue" type="text" style="overflow-y:scroll" id="notes" name="notes" rows="100" cols="100" required="true"></textarea>
+          <br><br>
+        <textarea class="md-textarea scrollbar-light-blue" type="text" style="overflow-y:scroll" id="notes" name="notes" rows="100" cols="100"></textarea>
         <label for="notes" class="">Notes</label>
       </div><br>
 
@@ -254,11 +260,46 @@
   </form>
 </div>
 
+<link href="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.9/summernote-lite.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.9/summernote-lite.js"></script>
+<script>
+    $('#description').summernote({
+        placeholder: 'Problem Description',
+        tabsize: 2,
+        height: 100
+    });
+    $('#input').summernote({
+        placeholder: 'Input Specification',
+        tabsize: 2,
+        height: 100
+    });
+    $('#output').summernote({
+        placeholder: 'Output Specification',
+        tabsize: 2,
+        height: 100
+    });
+    $('#sample_input').summernote({
+        placeholder: 'Sample Input',
+        tabsize: 2,
+        height: 100
+    });
+    $('#sample_output').summernote({
+        placeholder: 'Sample Output',
+        tabsize: 2,
+        height: 100
+    });
+    $('#notes').summernote({
+        placeholder: 'Notes',
+        tabsize: 2,
+        height: 100
+    });
+</script>
+
 <script>
     $('#submit').click(function(){
       var contest = {{.Contest}};
       $('#form').attr({
-        'action': '/contests/' + contest["ContestId"] + '/new',
+        'action': '/contests/' + contest["Id"] + '/new',
         'method': 'post'
       });
     });
