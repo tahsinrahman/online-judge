@@ -6,10 +6,17 @@ import (
 )
 
 type Users struct {
-	UserId   int
+	UserId   int    `xorm:"pk"`
 	Name     string `form:"name"`
 	Username string `form:"username"`
 	Password string `form:"password"`
+	Teacher  bool
+}
+
+func Init() {
+	db.Engine.Sync(new(Users))
+	db.Engine.Sync(new(Problem))
+	db.Engine.Sync(new(Contest))
 }
 
 //homepage

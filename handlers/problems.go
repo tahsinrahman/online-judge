@@ -22,16 +22,18 @@ type Dataset struct {
 //structure of each problem
 //judge data is seperated? Should be connected?
 type Problem struct {
+	Id           int64
 	ProblemId    int
-	ContestId    int
+	ContestId    int64
 	Name         string  `form:"name"`
-	Description  string  `form:"description"`
-	Input        string  `form:"input"`
-	Output       string  `form:"output"`
-	SampleInput  string  `form:"sample_input"`
-	SampleOutput string  `form:"sample_output"`
+	Description  string  `form:"description" xorm:"varchar(1000)"`
+	Input        string  `form:"input" xorm:"varchar(1000)"`
+	Output       string  `form:"output" xorm:"varchar(1000)"`
+	SampleInput  string  `form:"sample_input" xorm:"varchar(1000)"`
+	SampleOutput string  `form:"sample_output" xorm:"varchar(1000)"`
 	TimeLimit    float64 `form:"timelimit"`
-	Notes        string  `form:"notes"`
+	MemoryLimit  int     `form:"memorylimit"`
+	Notes        string  `form:"notes" xorm:"varchar(1000)"`
 	//OrderId      string
 }
 
@@ -75,20 +77,24 @@ func createFile(cid string, pid string, id string, in string, file *multipart.Fi
 //gets problem info as formdata
 //inserts infos into db and save files in system storage
 //finally redirects to `contest/cid`
-func PostNewProblem(ctx *macaron.Context, problem Problem, dataset Dataset) {
+func PostProblem(ctx *macaron.Context, problem Problem, dataset Dataset) {
 	contest := ctx.Data["Contest"].(Contest)
 
-	problem.ContestId = contest.ContestId
+	problem.ContestId = contest.Id
 	problem.ProblemId = contest.ProblemCount + 1
 	contest.ProblemCount++
 
 	//update contest in db
-	db.Engine.Id(contest.ContestId).Update(&contest)
+	db.Engine.Id(contest.Id).Update(&contest)
 
 	//insert problem into db
-	db.Engine.Insert(&problem)
+	_, err := db.Engine.Insert(&problem)
+	if err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
 
-	cid := strconv.Itoa(contest.ContestId)
+	cid := strconv.FormatInt(contest.Id, 10)
 	pid := strconv.Itoa(problem.ProblemId)
 
 	//create a new direcory
@@ -110,20 +116,32 @@ func PostNewProblem(ctx *macaron.Context, problem Problem, dataset Dataset) {
 	ctx.Redirect("/contests/" + cid)
 }
 
-func GetUpload(ctx *macaron.Context) {
-	ctx.HTML(200, "test")
-}
-
 //route: /contests/:cid/:pid
 //show problem
 //show submit button if eligible and logged in
 func GetProblem(ctx *macaron.Context) {
-	fmt.Println("GetProblem")
+	ctx.HTML(200, "problem")
 }
 
-//route: /contests/:cid/:pid PUT
+//route: /contests/:cid/:pid/update GET
 func UpdateProblem(ctx *macaron.Context) {
-	fmt.Println("GetProblem")
+	ctx.HTML(201, "update_problem")
+}
+
+//route: /contests/:cid/:pid/update PUT
+func PutPostProblem(ctx *macaron.Context, problem Problem, dataset Dataset) {
+	cid := ctx.Params(":cid")
+	pid := ctx.Params(":pid")
+	fmt.Println(cid, pid)
+
+	_, err := db.Engine.Id(pid).Update(&problem)
+
+	if err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
+
+	ctx.Redirect("/contests/" + cid + "/" + pid)
 }
 
 //route: /contests/:cid/:pid DELETE
