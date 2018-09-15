@@ -87,7 +87,7 @@ p {
     $("#contest_name").append(contest["Name"])
 
     for(var i = 0; problems != null && i < problems.length;i++) {
-      var link = "/contests/" + contest["ContestId"] + "/" + problems[i]["ProblemId"];
+      var link = "/contests/" + contest["Id"] + "/" + problems[i]["ProblemId"];
       var x = "<br><h3><a href = " + link + ">" + problems[i]["Name"] + "</a></h3>";
       $("#problem_list").append(x);
     }
