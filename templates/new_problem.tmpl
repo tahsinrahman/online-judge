@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
@@ -21,18 +22,16 @@
     <div id="nav-placeholder">
     </div>
     <script>
-      var loggedIn = {{ .Login}};
-      if(loggedIn) {
-        $(function() {
-          $("#nav-placeholder").load("/navLoggedIn.html");
-        });
-      }
-      else {
-        $(function() {
-          $("#nav-placeholder").load("/navLoggedOut.html");
+        var loggedIn = {{.Login }};
+        if (loggedIn) {
+            $(function() {
+                $("#nav-placeholder").load("/navLoggedIn.html");
+            });
+        } else {
+            $(function() {
+                $("#nav-placeholder").load("/navLoggedOut.html");
+            });
         }
-         );
-      }
     </script>
     <!--end of Navigation bar-->
     <!-- SCRIPTS -->
@@ -48,273 +47,378 @@
     <!-- MDB core JavaScript -->
     <script type="text/javascript" src="/js/mdb.min.js">
     </script>
-  </head>
+</head>
 
 <body>
-<style>
-.form-elegant .font-small {
-  font-size: 0.8rem; }
+    <style>
+        .form-elegant .font-small {
+            font-size: 0.8rem;
+        }
+        
+        .form-elegant .z-depth-1a {
+            -webkit-box-shadow: 0 2px 5px 0 rgba(55, 161, 255, 0.26), 0 4px 12px 0 rgba(121, 155, 254, 0.25);
+            box-shadow: 0 2px 5px 0 rgba(55, 161, 255, 0.26), 0 4px 12px 0 rgba(121, 155, 254, 0.25);
+        }
+        
+        .form-elegant .z-depth-1-half,
+        .form-elegant .btn:hover {
+            -webkit-box-shadow: 0 5px 11px 0 rgba(85, 182, 255, 0.28), 0 4px 15px 0 rgba(36, 133, 255, 0.15);
+            box-shadow: 0 5px 11px 0 rgba(85, 182, 255, 0.28), 0 4px 15px 0 rgba(36, 133, 255, 0.15);
+        }
+        
+        .form-elegant,
+        .form-dark {
+            position: relative;
+            height: 604px;
+            overflow-y: scroll;
+        }
+        
+        .form-dark .font-small {
+            font-size: 0.8rem;
+        }
+        
+        .form-dark [type="radio"] + label,
+        .form-dark [type="checkbox"] + label {
+            font-size: 0.8rem;
+        }
+        
+        .form-dark [type="checkbox"] + label:before {
+            top: 2px;
+            width: 15px;
+            height: 15px;
+        }
+        
+        .form-dark .md-form label {
+            color: #fff;
+        }
+        
+        .form-dark input[type=text]:focus:not([readonly]) {
+            border-bottom: 1px solid #00C851;
+            -webkit-box-shadow: 0 1px 0 0 #00C851;
+            box-shadow: 0 1px 0 0 #00C851;
+        }
+        
+        .form-dark input[type=text]:focus:not([readonly]) + label {
+            color: #fff;
+        }
+        
+        .form-dark input[type=password]:focus:not([readonly]) {
+            border-bottom: 1px solid #00C851;
+            -webkit-box-shadow: 0 1px 0 0 #00C851;
+            box-shadow: 0 1px 0 0 #00C851;
+        }
+        
+        .form-dark input[type=password]:focus:not([readonly]) + label {
+            color: #fff;
+        }
+        
+        .form-dark input[type="checkbox"] + label:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 17px;
+            height: 17px;
+            z-index: 0;
+            border: 1.5px solid #fff;
+            border-radius: 1px;
+            margin-top: 2px;
+            -webkit-transition: 0.2s;
+            transition: 0.2s;
+        }
+        
+        .form-dark input[type="checkbox"]:checked + label:before {
+            top: -4px;
+            left: -3px;
+            width: 12px;
+            height: 22px;
+            border-style: solid;
+            border-width: 2px;
+            border-color: transparent #00c851 #00c851 transparent;
+            -webkit-transform: rotate(40deg);
+            -ms-transform: rotate(40deg);
+            transform: rotate(40deg);
+            -webkit-backface-visibility: hidden;
+            -webkit-transform-origin: 100% 100%;
+            -ms-transform-origin: 100% 100%;
+            transform-origin: 100% 100%;
+        }
+        
+        .scrollbar-light-blue::-webkit-scrollbar-track {
+            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.1);
+            background-color: #F5F5F5;
+            border-radius: 10px;
+        }
+        
+        .scrollbar-light-blue::-webkit-scrollbar {
+            width: 12px;
+            background-color: #F5F5F5;
+        }
+        
+        .scrollbar-light-blue::-webkit-scrollbar-thumb {
+            border-radius: 10px;
+            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.1);
+            background-color: #82B1FF;
+        }
+        
+        .scrollbar-dusty-grass::-webkit-scrollbar-track {
+            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.1);
+            background-color: #F5F5F5;
+            border-radius: 10px;
+        }
+        
+        .scrollbar-dusty-grass::-webkit-scrollbar {
+            width: 12px;
+            background-color: #F5F5F5;
+        }
+        
+        .scrollbar-dusty-grass::-webkit-scrollbar-thumb {
+            border-radius: 10px;
+            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.1);
+            background-image: -webkit-linear-gradient(330deg, #d4fc79 0%, #96e6a1 100%);
+            background-image: linear-gradient(120deg, #d4fc79 0%, #96e6a1 100%);
+        }
+        
+        .square::-webkit-scrollbar-track {
+            border-radius: 0 !important;
+        }
+        
+        .square::-webkit-scrollbar-thumb {
+            border-radius: 0 !important;
+        }
+        
+        .thin::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .anyClass {
+            height: 200px;
+            overflow-y: scroll;
+        }
+        
+        #imageURLId {
+            font-size: 14px;
+            font-weight: normal;
+            resize: none;
+            overflow-y: scroll;
+        }
+    </style>
 
-.form-elegant .z-depth-1a {
-  -webkit-box-shadow: 0 2px 5px 0 rgba(55, 161, 255, 0.26), 0 4px 12px 0 rgba(121, 155, 254, 0.25);
-  box-shadow: 0 2px 5px 0 rgba(55, 161, 255, 0.26), 0 4px 12px 0 rgba(121, 155, 254, 0.25); }
+    <div class="container-fluid" style="width: 90%; margin-top: 50px;">
+        <!-- header -->
+        <h4 class="h4-responsive">New Problem</h4>
+        <br>
 
-.form-elegant .z-depth-1-half,
-.form-elegant .btn:hover {
-  -webkit-box-shadow: 0 5px 11px 0 rgba(85, 182, 255, 0.28), 0 4px 15px 0 rgba(36, 133, 255, 0.15);
-  box-shadow: 0 5px 11px 0 rgba(85, 182, 255, 0.28), 0 4px 15px 0 rgba(36, 133, 255, 0.15); }
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="statement-tab" data-toggle="tab" href="#statement" role="tab" aria-controls="statement" aria-selected="true">Statement</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="tests-tab" data-toggle="tab" href="#tests" role="tab" aria-controls="tests" aria-selected="false">Tests</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="limits-tab" data-toggle="tab" href="#limits" role="tab" aria-controls="limits" aria-selected="false">Limits</a>
+            </li>
+            <!-->
+            <li class="nav-item">
+                <a class="nav-link" id="solutions-tab" data-toggle="tab" href="#solutions" role="tab" aria-controls="solutions" aria-selected="false">Solutions</a>
+            </li>
+            -->
+        </ul>
+        <br>
+        <br>
 
-.form-elegant,
-.form-dark {
-    position: relative;
-    height: 604px;
-    overflow-y: scroll;
-}
+        <form id="form" enctype="multipart/form-data">
+            <div class="tab-content" id="myTabContent">
+                <div class="tab-pane fade show active" id="statement" role="tabpanel" aria-labelledby="statement-tab">
+                    <!-- name -->
+                    <div class="md-form">
+                        <input type="text" id="name" name="name" class="form-control" required="true">
+                        <label for="name" class="">Problem Name </label>
+                    </div>
+                    <br>
 
-.form-dark .font-small {
-  font-size: 0.8rem; }
+                    <!-- description -->
+                    <div class="md-form">
+                        <br>
+                        <br>
+                        <textarea class="md-textarea scrollbar-light-blue" type="text" style="max-height:300px; min-height:300px; overflow-y:scroll" id="description" name="description" rows="100" cols="100" required="true"></textarea>
+                        <label for="description" class="">Problem Description </label>
+                    </div>
+                    <br>
 
-.form-dark [type="radio"] + label,
-.form-dark [type="checkbox"] + label {
-  font-size: 0.8rem; }
+                    <!-- input -->
+                    <div class="md-form">
+                        <br>
+                        <br>
+                        <textarea class="md-textarea scrollbar-light-blue" type="text" style="overflow-y:scroll" id="input" name="input" required="true"></textarea>
+                        <label for="input" class="">Input</label>
+                    </div>
+                    <br>
 
-.form-dark [type="checkbox"] + label:before {
-  top: 2px;
-  width: 15px;
-  height: 15px; }
+                    <!--  output -->
+                    <div class="md-form">
+                        <br>
+                        <br>
+                        <textarea class="md-textarea scrollbar-light-blue" type="text" style="overflow-y:scroll" id="output" name="output" required="true"></textarea>
+                        <label for="output" class="">Output</label>
+                    </div>
+                    <br>
 
-.form-dark .md-form label {
-  color: #fff; }
+                    <!-- sample input and output -->
+                    <br>
+                    <br>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <!-- sample input -->
+                            <div class="md-form">
+                                <br>
+                                <br>
+                                <textarea class="md-textarea scrollbar-light-blue" type="text" style="overflow-y:scroll" id="sample_input" name="sample_input" required="true"></textarea>
+                                <label for="sample_input" class="">Sample Input</label>
+                            </div>
+                            <br>
+                        </div>
+                        <div class="col-md-6">
+                            <!--  sample output -->
+                            <div class="md-form">
+                                <br>
+                                <br>
+                                <textarea class="md-textarea scrollbar-light-blue" type="text" style="overflow-y:scroll" id="sample_output" name="sample_output" required="true"></textarea>
+                                <label for="sample_output" class="">Sample Output</label>
+                            </div>
+                            <br>
+                        </div>
+                    </div>
 
-.form-dark input[type=text]:focus:not([readonly]) {
-  border-bottom: 1px solid #00C851;
-  -webkit-box-shadow: 0 1px 0 0 #00C851;
-  box-shadow: 0 1px 0 0 #00C851; }
+                    <!-- notes -->
+                    <div class="md-form">
+                        <br>
+                        <br>
+                        <textarea class="md-textarea scrollbar-light-blue" type="text" style="overflow-y:scroll" id="notes" name="notes" rows="100" cols="100"></textarea>
+                        <label for="notes" class="">Notes</label>
+                    </div>
+                    <br>
+                </div>
+                <div class="tab-pane fade" id="tests" role="tabpanel" aria-labelledby="tests-tab">
+                    <div class="md-form">
+                        <input type="text" id="maxpoint" name="maxpoint" class="form-control" required="true">
+                        <label for="maxpoint" class="">Maximum Point</label>
+                    </div>
 
-.form-dark input[type=text]:focus:not([readonly]) + label {
-  color: #fff; }
+                    <!-- judge data -->
+                    <div id="dataset">
+                    </div>
+                    <br>
 
-.form-dark input[type=password]:focus:not([readonly]) {
-  border-bottom: 1px solid #00C851;
-  -webkit-box-shadow: 0 1px 0 0 #00C851;
-  box-shadow: 0 1px 0 0 #00C851; }
+                    <div class="text-left">
+                        <a href="" class="btn btn-default btn-rounded mb-4" id="add" style="padding: 10px; background-color: #4CAF50" data-toggle="modal" data-target="#modalLoginForm">Add Test</a>
+                    </div>
 
-.form-dark input[type=password]:focus:not([readonly]) + label {
-  color: #fff; }
-
-.form-dark input[type="checkbox"] + label:before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 17px;
-  height: 17px;
-  z-index: 0;
-  border: 1.5px solid #fff;
-  border-radius: 1px;
-  margin-top: 2px;
-  -webkit-transition: 0.2s;
-  transition: 0.2s; }
-
-.form-dark input[type="checkbox"]:checked + label:before {
-  top: -4px;
-  left: -3px;
-  width: 12px;
-  height: 22px;
-  border-style: solid;
-  border-width: 2px;
-  border-color: transparent #00c851 #00c851 transparent;
-  -webkit-transform: rotate(40deg);
-  -ms-transform: rotate(40deg);
-  transform: rotate(40deg);
-  -webkit-backface-visibility: hidden;
-  -webkit-transform-origin: 100% 100%;
-  -ms-transform-origin: 100% 100%;
-  transform-origin: 100% 100%; }
-
-.scrollbar-light-blue::-webkit-scrollbar-track {
-  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.1);
-  background-color: #F5F5F5;
-  border-radius: 10px; }
-
-.scrollbar-light-blue::-webkit-scrollbar {
-  width: 12px;
-  background-color: #F5F5F5; }
-
-.scrollbar-light-blue::-webkit-scrollbar-thumb {
-  border-radius: 10px;
-  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.1);
-  background-color: #82B1FF; }
-
-.scrollbar-dusty-grass::-webkit-scrollbar-track {
-  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.1);
-  background-color: #F5F5F5;
-  border-radius: 10px; }
-
-.scrollbar-dusty-grass::-webkit-scrollbar {
-  width: 12px;
-  background-color: #F5F5F5; }
-
-.scrollbar-dusty-grass::-webkit-scrollbar-thumb {
-  border-radius: 10px;
-  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.1);
-  background-image: -webkit-linear-gradient(330deg, #d4fc79 0%, #96e6a1 100%);
-  background-image: linear-gradient(120deg, #d4fc79 0%, #96e6a1 100%); }
-
-.square::-webkit-scrollbar-track {
-  border-radius: 0 !important; }
-
-.square::-webkit-scrollbar-thumb {
-  border-radius: 0 !important; }
-
-.thin::-webkit-scrollbar {
-  width: 6px; }
-
-.anyClass {
-  height:200px;
-  overflow-y: scroll;
-}
-
-#imageURLId {
-  font-size: 14px;
-  font-weight: normal;
-  resize: none;
-  overflow-y: scroll;
-}
-</style>
-
-<div class="container-fluid" style="width: 90%; margin-top: 50px;">
-  <form id = "form" enctype="multipart/form-data">
-    <div class="jumbotron">
-
-      <!-- header -->
-      <h4 class="h4-responsive">New Problem</h4> <br>
-
-      <!-- name -->
-      <div class="md-form">
-        <input type="text" id="name" name="name" class="form-control" required="true">
-        <label for="name" class="">Problem Name </label>
-      </div><br>
-
-      <!-- description -->
-      <div class="md-form">
-          <br><br>
-        <textarea class="md-textarea scrollbar-light-blue" type="text" style="max-height:300px; min-height:300px; overflow-y:scroll" id="description" name="description" rows="100" cols="100" required="true" ></textarea>
-        <label for="description" class="">Problem Description </label>
-      </div><br>
-
-      <!-- input -->
-      <div class="md-form">
-          <br><br>
-        <textarea class="md-textarea scrollbar-light-blue" type="text" style="overflow-y:scroll" id="input" name="input" required="true"></textarea>
-        <label for="input" class="">Input</label>
-      </div><br>
-
-      <!--  output -->
-      <div class="md-form">
-          <br><br>
-        <textarea class="md-textarea scrollbar-light-blue" type="text" style="overflow-y:scroll" id="output" name="output" required="true"></textarea>
-        <label for="output" class="">Output</label>
-      </div><br>
-
-      <!-- sample input and output -->
-          <br><br>
-      <div class="row">
-        <div class="col-md-6">
-          <!-- sample input -->
-          <div class="md-form">
-          <br><br>
-            <textarea class="md-textarea scrollbar-light-blue" type="text" style="overflow-y:scroll" id="sample_input" name="sample_input" required="true" ></textarea>
-            <label for="sample_input" class="">Sample Input</label>
-          </div><br>
-        </div>
-        <div class="col-md-6">
-          <!--  sample output -->
-          <div class="md-form">
-          <br><br>
-            <textarea class="md-textarea scrollbar-light-blue" type="text" style="overflow-y:scroll" id="sample_output" name="sample_output" required="true"></textarea>
-            <label for="sample_output" class="">Sample Output</label>
-          </div><br>
-        </div>
-      </div>
-
-      <!-- notes -->
-      <div class="md-form">
-          <br><br>
-        <textarea class="md-textarea scrollbar-light-blue" type="text" style="overflow-y:scroll" id="notes" name="notes" rows="100" cols="100"></textarea>
-        <label for="notes" class="">Notes</label>
-      </div><br>
-
-      <!-- judge data -->
-      <div id = "dataset">
-      </div><br>
-
-      <button id="add">Add Dataset</button>
-
-      <!-- button -->
-      <div class="text-center">
-        <button id = "submit" class="btn btn-primary">Submit </button>
-      </div>
-
+                </div>
+                <div class="tab-pane fade" id="limits" role="tabpanel" aria-labelledby="limits-tab">
+                    <div class="md-form">
+                        <input type="text" id="timelimit" name="timelimit" class="form-control" required="true">
+                        <label for="timelimit" class="">Time Limit (S)</label>
+                    </div>
+                    <div class="md-form">
+                        <input type="text" id="memorylimit" name="memorylimit" class="form-control" required="true">
+                        <label for="memorylimit" class="">Memory Limit (MB)</label>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="solutions" role="tabpanel" aria-labelledby="solutions-tab">
+                </div>
+            </div>
+            <!-- button -->
+            <div class="text-center">
+                <button id="submit" class="btn btn-primary">Submit </button>
+            </div>
+            <br>
+            <br>
+            <br>
+            <br>
+        </form>
     </div>
-  </form>
-</div>
 
-<link href="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.9/summernote-lite.css" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.9/summernote-lite.js"></script>
-<script>
-    $('#description').summernote({
-        placeholder: 'Problem Description',
-        tabsize: 2,
-        height: 100
-    });
-    $('#input').summernote({
-        placeholder: 'Input Specification',
-        tabsize: 2,
-        height: 100
-    });
-    $('#output').summernote({
-        placeholder: 'Output Specification',
-        tabsize: 2,
-        height: 100
-    });
-    $('#sample_input').summernote({
-        placeholder: 'Sample Input',
-        tabsize: 2,
-        height: 100
-    });
-    $('#sample_output').summernote({
-        placeholder: 'Sample Output',
-        tabsize: 2,
-        height: 100
-    });
-    $('#notes').summernote({
-        placeholder: 'Notes',
-        tabsize: 2,
-        height: 100
-    });
-</script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.9/summernote-lite.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.9/summernote-lite.js"></script>
+    <script>
+        $('#description').summernote({
+            placeholder: 'Problem Description',
+            tabsize: 2,
+            height: 100
+        });
+        $('#input').summernote({
+            placeholder: 'Input Specification',
+            tabsize: 2,
+            height: 100
+        });
+        $('#output').summernote({
+            placeholder: 'Output Specification',
+            tabsize: 2,
+            height: 100
+        });
+        $('#sample_input').summernote({
+            placeholder: 'Sample Input',
+            tabsize: 2,
+            height: 100
+        });
+        $('#sample_output').summernote({
+            placeholder: 'Sample Output',
+            tabsize: 2,
+            height: 100
+        });
+        $('#notes').summernote({
+            placeholder: 'Notes',
+            tabsize: 2,
+            height: 100
+        });
+    </script>
 
-<script>
-    $('#submit').click(function(){
-      var contest = {{.Contest}};
-      $('#form').attr({
-        'action': '/contests/' + contest["Id"] + '/new',
-        'method': 'post'
-      });
-    });
+    <script>
+        var cnt = 0;
+    </script>
 
-    $('#add').click(function() {
+    <script>
+        $('#submit').click(function() {
+            var contest = {{.Contest }};
+            $('#form').attr({
+                'action': '/contests/' + contest["Id"] + '/new',
+                'method': 'post'
+            });
+        });
 
-          $('#dataset').append('<div class="row"><div class="col-md-5 form-group"> <label for="data">Input File</label> <input type="file" class="form-control-file" id="data" name="input_data[]" required="true"> </div><div class="col-md-5 form-group"> <label for="data">Output File</label> <input type="file" class="form-control-file" id="data" name="output_data[]" required="true"> </div><div class="col-sm-2"><br><button class="btn btn-sm btn-danger" onclick="removefunc(this)">remove</button></div></div>');
+        $('#add').click(function() {
+            $('#dataset').append('<div class="row"><div class="col-md-2 md-form"> <input type="text" id="label" name="label[]" class="form-control" required="true"> <label for="label" class="">Label</label> </div><div class="col-md-3 form-group"> <label for="data">Input File</label> <input type="file" class="form-control-file" id="data" name="input_data[]" required="true"> </div><div class="col-md-3 form-group"> <label for="data">Output File</label> <input type="file" class="form-control-file" id="data" name="output_data[]" required="true"> </div><div class="col-md-2 md-form"><input type="text" id="weight" name="weight[]" class="form-control" required="true"><label for="weight">Weight</label></div><div class="col-md-1"><br><button class="btn btn-sm btn-danger" onclick="removefunc(this)">remove</button></div></div>');
+            /*
+            <div class="row">
+                <div class="col-md-5 form-group">
+                    <label class="btn btn-primary btn-sm" style="width: 150px !important;" for="my-file-selector">
+                        <input id="my-file-selector" type="file" style="display:none" name="input_file[]"
+                        onchange="$('#upload-file-info').html(this.files[0].name)">
+                        Input  File
+                    </label>
+                    <span class='label label-info' id="upload-file-info"></span>
+                </div>
+                <div class="col-md-5 form-group">
+                    <label class="btn btn-primary btn-sm"style="width: 150px !important;" for="my-file-selector-2">
+                        <input id="my-file-selector-2" type="file" style="display:none" name="output_file[]"
+                        onchange="$('#op-file-info').html(this.files[0].name)">
+                        Output File
+                    </label>
+                    <span class='label label-info' id="op-file-info"></span>
+                </div>
+                <div class="col-sm-2">
+                    <br><button class="btn btn-sm btn-danger" onclick="removefunc(this)">remove</button>
+                </div>
+            </div>
+            */
+        });
+    </script>
 
-    });
-
-</script>
-
-<script>
-function removefunc (e) {
-  e.parentNode.parentNode.parentNode.removeChild(e.parentNode.parentNode);
-}
-</script>
+    <script>
+        function removefunc(e) {
+            e.parentNode.parentNode.parentNode.removeChild(e.parentNode.parentNode);
+        }
+    </script>
 </body>

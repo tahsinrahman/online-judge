@@ -17,6 +17,7 @@ func Init() {
 	db.Engine.Sync(new(Users))
 	db.Engine.Sync(new(Problem))
 	db.Engine.Sync(new(Contest))
+	db.Engine.Sync(new(Dataset))
 }
 
 //homepage

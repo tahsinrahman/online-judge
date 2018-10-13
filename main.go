@@ -47,17 +47,29 @@ func main() {
 				m.Get("/update", handlers.GetUpdateContest)                              //done
 				m.Post("/update", binding.Bind(handlers.Contest{}), handlers.PutContest) //done
 
-				m.Get("/new", handlers.GetNewProblem)                                                                             //done
-				m.Post("/new", binding.Bind(handlers.Problem{}), binding.MultipartForm(handlers.Dataset{}), handlers.PostProblem) //TODO:db
+				m.Get("/new", handlers.GetNewProblem)                                                                                    //done
+				m.Post("/new", binding.Bind(handlers.Problem{}), binding.MultipartForm(handlers.ProblemDataset{}), handlers.PostProblem) //TODO:db
 			}, middlewares.CheckManager)
 
 			m.Group("/:pid", func() {
 				m.Get("/", handlers.GetProblem)
-				m.Get("/update", handlers.UpdateProblem)
-				m.Post("/update", binding.Bind(handlers.Problem{}), binding.MultipartForm(handlers.Dataset{}), handlers.PutPostProblem)
-				m.Delete("/:pid", handlers.DeleteProblem)
-				m.Post("/:pid/submit", handlers.SubmitProblem)
+				m.Delete("/", handlers.DeleteProblem)
+				//m.Post("/update", binding.Bind(handlers.Problem{}), binding.MultipartForm(handlers.ProblemDataset{}), handlers.PutPostProblem)
+
+				m.Get("/dload/:type/:id", handlers.DownloadTest)
+				m.Get("/tests", middlewares.AddTests, handlers.GetList)
+				m.Post("/tests", binding.Bind(handlers.ProblemDataset{}), handlers.AddNewTest)
+
+				m.Group("/update", func() {
+					m.Get("/", handlers.UpdateProblem)
+					m.Post("/description", binding.Bind(handlers.Problem{}), handlers.UpdateProblemDescripton)
+					m.Post("/tests", binding.Bind(handlers.Problem{}), handlers.UpdateProblemTests)
+					m.Post("/limits", binding.Bind(handlers.Problem{}), handlers.UpdateProblemLimits)
+					m.Delete("/:id", handlers.DeleteTest)
+				}, middlewares.AddTests)
 			}, middlewares.CheckProblem) //need to add middleware to check if problem exists
+
+			m.Post("/submit", binding.MultipartForm(handlers.Submission{}), handlers.SubmitProblem)
 
 			m.Get("/rank", handlers.GetRank)
 			m.Get("/allsubmissions", handlers.GetAllSubmissions)
@@ -66,6 +78,7 @@ func main() {
 	})
 
 	handlers.Init()
+	// create files for old datasets
 
 	//starting the server
 	m.Run()
