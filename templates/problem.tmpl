@@ -76,7 +76,7 @@
 
 <body>
 <div class="row container-fluid">
-  <div class="col-md-9 jumbotron container-fluid" style="width: 100%; margin-top: 30px;">
+  <div class="col-md-8 jumbotron container-fluid" style="width: 100%; margin-top: 30px;">
     <h1 class="h1-responsive text-left">{{.Problem.Name}}</h1><br>
 
     Time Limit: {{.Problem.TimeLimit}}<br>
@@ -101,17 +101,50 @@
     <br><h3 class="h3-responsive">Notes</h3> <br>
     <div id="notes"></div>
   </div>
-  <div class="container col-md-2 text-left" style="margin-top: 30px; margin-right: 20px;">
+  <div class="container col-md-3 text-left" style="margin-top: 30px; margin-right: 20px;">
     <div class="row jumbotron">
-      <p id="status"> </p>
-      <p id="demo"> </p>
-      <p id="update"> </p>
+      <div class="container text-center">
+        <p id="status"> </p>
+      </div>
+      <div class="container text-center">
+        <p id="demo"> </p>
+      </div>
+
+      <div class="container text-center">
+        <p id="update"> </p>
+      </div>
+
+      <div class="container">
+        <br>
+        <form id = "form" enctype="multipart/form-data">
+          <select name="language" class="browser-default custom-select mb-3">
+            <option value="" disabled selected>Select Language</option>
+            <option value="c">C</option>
+            <option value="c++">C++</option>
+            <option value="java">Java</option>
+          </select>
+          <input type="file" name="source">
+
+          <button id="submit" class="btn btn-primary my-3" type="submit" style="margin-left: 0px;">Submit</button>
+
+        </form>
+      </div>
     </div>
-    <div>
-</di
-    v>
-  </div>
+  <div>
 </div>
+
+<script>
+  console.log("tahsin");
+  $('#submit').click(function(){
+    var contest = {{.Contest}};
+    var problem = {{.Problem}};
+    console.log("maga");
+    $('#form').attr({
+      'action': '/contests/' + contest["Id"] + '/' + problem["ProblemId"] + '/submit',
+      'method': 'post'
+    });
+  });
+</script>
 
 <script>
   $("#input").append("{{.Problem.Input}}")

@@ -84,3 +84,17 @@ func CheckManager(ctx *macaron.Context) {
 		return
 	}
 }
+
+func AddTests(ctx *macaron.Context) {
+	problem, _ := ctx.Data["Problem"].(handlers.Problem)
+
+	var dataset []handlers.Dataset
+
+	err := db.Engine.Find(&dataset, &handlers.Dataset{ProblemId: problem.ProblemId})
+	if err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
+
+	ctx.Data["Dataset"] = dataset
+}
