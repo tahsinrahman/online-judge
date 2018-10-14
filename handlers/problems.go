@@ -1,15 +1,18 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/tahsinrahman/online-judge/db"
 	macaron "gopkg.in/macaron.v1"
@@ -19,7 +22,7 @@ import (
 //each set has associated point values TODO
 type Dataset struct {
 	Id          int64
-	ProblemId   int
+	ProblemId   int64
 	Label       string
 	JudgeInput  string `xorm:"text"`
 	JudgeOutput string `xorm:"text"`
@@ -34,8 +37,15 @@ type ProblemDataset struct {
 }
 
 type Submission struct {
-	Language string                `form:"language"`
-	Source   *multipart.FileHeader `form:"source"`
+	Id         int64
+	ProblemId  int64
+	UserName   string
+	Time       time.Time
+	Language   string                `form:"language"`
+	Source     *multipart.FileHeader `form:"source" xorm:"-"`
+	Submission string                `xorm:"text"`
+	Status     string
+	Points     float64
 }
 
 //structure of each problem
@@ -62,19 +72,31 @@ func GetNewProblem(ctx *macaron.Context) {
 	ctx.HTML(200, "new_problem")
 }
 
+func fileToByte(file *multipart.FileHeader) ([]byte, error) {
+	f, err := file.Open()
+	if err != nil {
+		return []byte{}, err
+	}
+
+	b, err := ioutil.ReadAll(f)
+	if err != nil {
+		return []byte{}, err
+	}
+	return b, nil
+}
+
 //gets judge data as a file
 //save them into local storage
 //`dataset/cid/pid/in_id`
 //`dataset/cid/pid/out_id`
-func createFile(cid string, pid string, id string, in string, file *multipart.FileHeader) (string, error) {
-	path := filepath.Join("dataset", cid, pid, id)
 
+func createFile(path, filename string, file *multipart.FileHeader) (string, error) {
 	err := os.MkdirAll(path, 0755)
 	if err != nil {
 		return "", err
 	}
 
-	path = filepath.Join(path, in)
+	path = filepath.Join(path, filename)
 	newInputFile, err := os.Create(path)
 
 	if err != nil {
@@ -82,12 +104,7 @@ func createFile(cid string, pid string, id string, in string, file *multipart.Fi
 	}
 	defer newInputFile.Close()
 
-	f, err := file.Open()
-	if err != nil {
-		return "", err
-	}
-
-	b, err := ioutil.ReadAll(f)
+	b, err := fileToByte(file)
 	if err != nil {
 		return "", err
 	}
@@ -98,14 +115,16 @@ func createFile(cid string, pid string, id string, in string, file *multipart.Fi
 	}
 	return string(b), nil
 }
-func addDataset(cid, pid string, problemId int, dataset ProblemDataset) error {
+
+func addDataset(cid, pid string, problemId int64, dataset ProblemDataset) error {
 	// add datasets
 	for i, j := 0, len(dataset.JudgeInput); i < j; i++ {
-		input, err := createFile(cid, pid, strconv.Itoa(i), "in", dataset.JudgeInput[i])
+
+		input, err := fileToByte(dataset.JudgeInput[i])
 		if err != nil {
 			return err
 		}
-		output, err := createFile(cid, pid, strconv.Itoa(i), "out", dataset.JudgeOutput[i])
+		output, err := fileToByte(dataset.JudgeOutput[i])
 		if err != nil {
 			return err
 		}
@@ -113,11 +132,22 @@ func addDataset(cid, pid string, problemId int, dataset ProblemDataset) error {
 		data := Dataset{
 			Label:       dataset.Label[i],
 			Weight:      dataset.Weight[i],
-			JudgeInput:  input,
-			JudgeOutput: output,
+			JudgeInput:  string(input),
+			JudgeOutput: string(output),
 			ProblemId:   problemId,
 		}
+
 		_, err = db.Engine.Insert(&data)
+		if err != nil {
+			return err
+		}
+
+		path := filepath.Join("dataset", cid, pid, strconv.FormatInt(data.Id, 10))
+		_, err = createFile(path, "in", dataset.JudgeInput[i])
+		if err != nil {
+			return err
+		}
+		_, err = createFile(path, "out", dataset.JudgeOutput[i])
 		if err != nil {
 			return err
 		}
@@ -146,7 +176,7 @@ func PostProblem(ctx *macaron.Context, problem Problem, dataset ProblemDataset) 
 	cid := strconv.FormatInt(contest.Id, 10)
 	pid := strconv.Itoa(problem.ProblemId)
 
-	err = addDataset(cid, pid, problem.ProblemId, dataset)
+	err = addDataset(cid, pid, problem.Id, dataset)
 	if err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
 		return
@@ -243,7 +273,17 @@ func GetList(ctx *macaron.Context) {
 
 func DeleteTest(ctx *macaron.Context) {
 	id := ctx.Params(":id")
+	cid := ctx.Params(":cid")
+	pid := ctx.Params(":pid")
+
+	// remove from db
 	_, err := db.Engine.Id(id).Delete(&Dataset{})
+	if err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
+	// remove from file system
+	err = os.RemoveAll(filepath.Join("dataset", cid, pid, id))
 	if err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
 		return
@@ -258,7 +298,7 @@ func AddNewTest(ctx *macaron.Context, dataset ProblemDataset) {
 
 	problem := ctx.Data["Problem"].(Problem)
 
-	err := addDataset(ctx.Params(":cid"), ctx.Params(":pid"), problem.ProblemId, dataset)
+	err := addDataset(ctx.Params(":cid"), ctx.Params(":pid"), problem.Id, dataset)
 	if err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
 		return
@@ -275,30 +315,128 @@ func DeleteProblem(ctx *macaron.Context) {
 	fmt.Println("GetProblem")
 }
 
+func updateSubmissionStatus(submission *Submission) error {
+	_, err := db.Engine.Id(submission.Id).Update(submission)
+	return err
+}
+
+func compile(compileCmd string, submission *Submission) bool {
+	args := strings.Split(compileCmd, " ")
+	cmd := exec.Command(args[0], args[1:]...)
+	err := cmd.Run()
+	if err != nil {
+		submission.Status = "compilation error"
+		err = updateSubmissionStatus(submission)
+		if err != nil {
+			panic(err)
+		}
+		return false
+	}
+	return true
+}
+
 //route: /contests/:cid/:pid POST
 //submit problem if eligible and logged in
-func SubmitProblem(solution Submission, ctx *macaron.Context) {
-	runSubmission := func(solution Submission) {
+func SubmitProblem(submission Submission, ctx *macaron.Context) {
+	runSubmission := func(dataPath, sourcePath, filename, execName, timelimit string, solution Submission, problem *Problem) {
 		switch solution.Language {
 		case "java":
 		case "c++":
-			//cmd := 'docker run --rm -v /home/tahsin/code/codeforces:/submission -w /submission debian /bin/sh -c "timeout 2 ./a.out"'
-			//strings.Split(cmd)
+			compileCmd := fmt.Sprintf("g++ -O3 -std=c++14 -o %s %s", execName, filename)
+			if !compile(compileCmd, &submission) {
+				return
+			}
+
+			// now run for all tests
+			var data []Dataset
+			err := db.Engine.Find(&data, &Dataset{ProblemId: submission.ProblemId})
+			if err != nil {
+				panic(err)
+			}
+
+			total, maxPossible := 0, 0
+			for _, dataset := range data {
+				submissionId := strconv.FormatInt(submission.Id, 10)
+				datasetId := strconv.FormatInt(dataset.Id, 10)
+
+				cmdRun := exec.Command("/bin/bash", "scripts/runTest.sh", dataPath, submissionId, datasetId, timelimit)
+
+				var buf bytes.Buffer
+				cmdRun.Stdout = &buf
+
+				err = cmdRun.Run()
+				if err == nil {
+					total += dataset.Weight
+				}
+				if buf.Len() != 0 && len(submission.Status) != 0 {
+					submission.Status = buf.String()
+					if submission.Status == "139\n" {
+						submission.Status = "Runtime Error"
+					} else if submission.Status == "WA\n" {
+						submission.Status = "Wrong Answer"
+					} else {
+						submission.Status = "Time Limit Exceeded"
+					}
+				}
+				maxPossible += dataset.Weight
+			}
+
+			if total == maxPossible {
+				submission.Status = "Accepted"
+			}
+
+			submission.Points = float64(problem.MaxPoint) * float64(total) / float64(maxPossible)
+			err = updateSubmissionStatus(&submission)
+			if err != nil {
+				panic(err)
+			}
+
+			// update database
 		case "c":
+			compileCmd := fmt.Sprintf("gcc -O3 -o %s %s", execName, filename)
+			compile(compileCmd, &submission)
 		default:
 			panic("unrecognized format")
 		}
 	}
 
+	username := ctx.Data["Username"].(string)
+	problem := ctx.Data["Problem"].(Problem)
+
+	// prepare submission
+	submission.Time = time.Now()
+	submission.UserName = username
+	submission.ProblemId = problem.Id
+
+	b, err := fileToByte(submission.Source)
+	if err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
+	submission.Submission = string(b)
+	submission.Status = "pending"
+
+	// save to db
+	_, err = db.Engine.Insert(&submission)
+	if err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
+
 	// save to local storage
-
-	// acknowledge
-
-	// run go routine
-	go runSubmission(solution)
+	submissionId := strconv.FormatInt(submission.Id, 10)
+	path := filepath.Join("submissions", submissionId)
+	_, err = createFile(path, submission.Source.Filename, submission.Source)
+	if err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
 
 	cid := ctx.Params(":cid")
 	pid := ctx.Params(":pid")
+
+	// run go routine
+	go runSubmission(filepath.Join("dataset", cid, pid), path, filepath.Join(path, submission.Source.Filename), filepath.Join(path, submissionId), fmt.Sprintf("%v", problem.TimeLimit), submission, &problem)
 
 	ctx.Redirect("/contests/" + cid + "/" + pid)
 }

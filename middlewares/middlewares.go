@@ -90,11 +90,26 @@ func AddTests(ctx *macaron.Context) {
 
 	var dataset []handlers.Dataset
 
-	err := db.Engine.Find(&dataset, &handlers.Dataset{ProblemId: problem.ProblemId})
+	err := db.Engine.Find(&dataset, &handlers.Dataset{ProblemId: problem.Id})
 	if err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 
 	ctx.Data["Dataset"] = dataset
+}
+
+func AddSubmissions(ctx *macaron.Context) {
+	problem, _ := ctx.Data["Problem"].(handlers.Problem)
+	username, _ := ctx.Data["Username"].(string)
+
+	var submissions []handlers.Submission
+	err := db.Engine.Find(&submissions, &handlers.Submission{ProblemId: problem.Id, UserName: username})
+
+	if err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
+
+	ctx.Data["Submissions"] = submissions
 }

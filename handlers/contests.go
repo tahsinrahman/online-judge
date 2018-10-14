@@ -22,7 +22,7 @@ type Contest struct {
 	ContestStartTime time.Time //saved in mysql after processing from startdate
 	ContestEndTime   time.Time //saved in mysql after processing formdata
 	Manager          string    `form:"manager"`
-	ManagerId        int
+	ManagerId        int64
 	ProblemCount     int
 }
 
@@ -149,7 +149,7 @@ func newContestForm(ctx *macaron.Context, contest Contest, update bool) (Contest
 
 	//use namanger name instead of handle
 	contest.Manager = manager.Username
-	contest.ManagerId = manager.UserId
+	contest.ManagerId = manager.Id
 
 	//update start and end time
 	st, en, err := findTime(contest)

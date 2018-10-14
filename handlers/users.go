@@ -6,7 +6,7 @@ import (
 )
 
 type Users struct {
-	UserId   int    `xorm:"pk"`
+	Id       int64
 	Name     string `form:"name"`
 	Username string `form:"username"`
 	Password string `form:"password"`
@@ -18,6 +18,7 @@ func Init() {
 	db.Engine.Sync(new(Problem))
 	db.Engine.Sync(new(Contest))
 	db.Engine.Sync(new(Dataset))
+	db.Engine.Sync(new(Submission))
 }
 
 //homepage
@@ -67,7 +68,7 @@ func PostSignUp(ctx *macaron.Context, user Users) {
 
 	//insert into db
 	if _, err := db.Engine.Insert(user); err != nil {
-		ctx.Resp.Write([]byte("500 internal server error"))
+		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 
