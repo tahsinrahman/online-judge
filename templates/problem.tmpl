@@ -117,24 +117,60 @@
       <div class="container">
         <br>
         <form id = "form" enctype="multipart/form-data">
-          <select name="language" class="browser-default custom-select mb-3">
+          <select name="language" class="browser-default custom-select mb-3" required="true">
             <option value="" disabled selected>Select Language</option>
             <option value="c">C</option>
             <option value="c++">C++</option>
             <option value="java">Java</option>
           </select>
-          <input type="file" name="source">
+          <input type="file" name="source" required="true">
 
           <button id="submit" class="btn btn-primary my-3" type="submit" style="margin-left: 0px;">Submit</button>
 
         </form>
       </div>
     </div>
-  <div>
+    <div class="row jumbotron" id="submissions">
+        <h4 class="h4-responsive">Submissions</h4><br><br>
+        <hr class="my-1"><br>
+
+<div class="modal fade" id="modalLoginForm" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header text-center">
+                <h4 class="modal-title w-100 font-weight-bold">My Submission</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+				<div class="container-fluid">
+					<div class="row">
+						<div class="col-md-8" id="language"></div>
+					</div>
+					<br>
+					<div class="row">
+						<div class="col-md-8" id="result"></div>
+					</div>
+					<div class="row">
+						<div class="col-md-8" id="result">
+							<p>Source Code</p>
+						</div>
+						<div class="col-md-8">
+							<pre><code id="source-code"></code></pre>
+						</div>
+					</div>
+				</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    </div>
+  </div>
 </div>
 
 <script>
-  console.log("tahsin");
   $('#submit').click(function(){
     var contest = {{.Contest}};
     var problem = {{.Problem}};
@@ -144,6 +180,49 @@
       'method': 'post'
     });
   });
+    var submissions = {{.Submissions}};
+    console.log(submissions);
+    var len = 0;
+    if (submissions != null) {
+        len = submissions.length;
+    }
+    for(var i=len-1; i >= 0; i--) {
+        //<a href="" class="btn btn-default btn-rounded mb-4" data-toggle="modal" data-target="#modalLoginForm">Add New Test</a>
+
+        var color="danger";
+        var current = submissions[i]["Status"];
+        if (current == "Accepted") {
+            color = "success";
+        } else if (current == "pending") {
+            color = "default";
+        }
+        var mydiv = `
+            <div class="container">
+				<h4><span class="badge badge-${color}">${submissions[i]["Points"]}</span>
+				<a href="#!" class="badge badge-${color}" data-toggle="modal" data-target="#modalLoginForm" style="white-space: pre-line;" onclick="show_submission(${i})">${submissions[i]["Status"]}</a></h4>
+            </div>
+        `
+
+	   $("#submissions").append(mydiv);
+    }
+
+function show_submission(index) {
+    var mycode = submissions[index]["Submission"];
+	var pre ='';
+	for(var i = 0; i < mycode.length; i++) {
+		if (mycode[i] == '&') pre += '&amp;';
+		else if(mycode[i] == '<') pre += '&lt;';
+		else if(mycode[i] == '>') pre += '&gt;';
+		else pre += mycode[i];
+	}
+    $('#source-code').empty();
+    $('#source-code').append(pre);
+
+    $('#language').empty();
+    $('#language').append('Language: ' + submissions[index]["Language"] + '<br>');
+    $('#language').append('Result: ' + submissions[index]["Status"]);
+}
+
 </script>
 
 <script>
