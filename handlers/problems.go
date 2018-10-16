@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/tahsinrahman/online-judge/db"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -46,6 +47,17 @@ type Submission struct {
 	Submission string                `xorm:"text"`
 	Status     string
 	Points     float64
+}
+
+type Rank struct {
+	Id        int64
+	ContestId int64
+	ProblemId int64
+	UserName  string
+	Tries     int
+	Penalty   int64
+	Score     float64
+	Status    int
 }
 
 //structure of each problem
@@ -315,18 +327,64 @@ func DeleteProblem(ctx *macaron.Context) {
 	fmt.Println("GetProblem")
 }
 
-func updateSubmissionStatus(submission *Submission) error {
-	_, err := db.Engine.Id(submission.Id).Update(submission)
+func updateSubmissionStatus(submission *Submission, contest *Contest, problem *Problem) error {
+	// now
+	rank := Rank{
+		ContestId: contest.Id,
+		ProblemId: problem.Id,
+		UserName:  submission.UserName,
+	}
+	has, err := db.Engine.Get(&rank)
+	if err != nil {
+		return err
+	}
+
+	spew.Dump(rank)
+	if has {
+		if rank.Score < submission.Points {
+			rank.Score = submission.Points
+			rank.Penalty = int64(contest.ContestStartTime.Sub(submission.Time).Minutes()) + int64(rank.Tries*20)
+			rank.Tries++
+		} else {
+			rank.Tries++
+		}
+
+		spew.Dump(int(rank.Score), problem.MaxPoint)
+		if int(rank.Score) == problem.MaxPoint {
+			rank.Status = 1
+			spew.Dump(rank.Status)
+		}
+
+		// update
+		_, err = db.Engine.Id(rank.Id).Update(&rank)
+		if err != nil {
+			return err
+		}
+	} else {
+		rank.Score = submission.Points
+		rank.Tries = 1
+		if rank.Score > 0 {
+			rank.Penalty = int64(contest.ContestStartTime.Sub(submission.Time).Minutes())
+		}
+
+		// insert
+		_, err := db.Engine.InsertOne(&rank)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	_, err = db.Engine.Id(submission.Id).Update(submission)
 	return err
 }
 
-func compile(compileCmd string, submission *Submission) bool {
+func compile(compileCmd string, submission *Submission, contest *Contest, problem *Problem) bool {
 	args := strings.Split(compileCmd, " ")
 	cmd := exec.Command(args[0], args[1:]...)
 	err := cmd.Run()
 	if err != nil {
 		submission.Status = "compilation error"
-		err = updateSubmissionStatus(submission)
+		err = updateSubmissionStatus(submission, contest, problem)
 		if err != nil {
 			panic(err)
 		}
@@ -338,12 +396,12 @@ func compile(compileCmd string, submission *Submission) bool {
 //route: /contests/:cid/:pid POST
 //submit problem if eligible and logged in
 func SubmitProblem(submission Submission, ctx *macaron.Context) {
-	runSubmission := func(dataPath, sourcePath, filename, execName, timelimit string, solution Submission, problem *Problem) {
+	runSubmission := func(dataPath, sourcePath, filename, execName, timelimit string, solution Submission, problem *Problem, contest *Contest) {
 		switch solution.Language {
 		case "java":
 		case "c++":
 			compileCmd := fmt.Sprintf("g++ -O3 -std=c++14 -o %s %s", execName, filename)
-			if !compile(compileCmd, &submission) {
+			if !compile(compileCmd, &submission, contest, problem) {
 				return
 			}
 
@@ -386,7 +444,7 @@ func SubmitProblem(submission Submission, ctx *macaron.Context) {
 			}
 
 			submission.Points = float64(problem.MaxPoint) * float64(total) / float64(maxPossible)
-			err = updateSubmissionStatus(&submission)
+			err = updateSubmissionStatus(&submission, contest, problem)
 			if err != nil {
 				panic(err)
 			}
@@ -394,7 +452,7 @@ func SubmitProblem(submission Submission, ctx *macaron.Context) {
 			// update database
 		case "c":
 			compileCmd := fmt.Sprintf("gcc -O3 -o %s %s", execName, filename)
-			compile(compileCmd, &submission)
+			compile(compileCmd, &submission, contest, problem)
 		default:
 			panic("unrecognized format")
 		}
@@ -402,6 +460,7 @@ func SubmitProblem(submission Submission, ctx *macaron.Context) {
 
 	username := ctx.Data["Username"].(string)
 	problem := ctx.Data["Problem"].(Problem)
+	contest := ctx.Data["Contest"].(Contest)
 
 	// prepare submission
 	submission.Time = time.Now()
@@ -436,7 +495,7 @@ func SubmitProblem(submission Submission, ctx *macaron.Context) {
 	pid := ctx.Params(":pid")
 
 	// run go routine
-	go runSubmission(filepath.Join("dataset", cid, pid), path, filepath.Join(path, submission.Source.Filename), filepath.Join(path, submissionId), fmt.Sprintf("%v", problem.TimeLimit), submission, &problem)
+	go runSubmission(filepath.Join("dataset", cid, pid), path, filepath.Join(path, submission.Source.Filename), filepath.Join(path, submissionId), fmt.Sprintf("%v", problem.TimeLimit), submission, &problem, &contest)
 
 	ctx.Redirect("/contests/" + cid + "/" + pid)
 }

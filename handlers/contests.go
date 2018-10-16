@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/tahsinrahman/online-judge/db"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -276,7 +278,74 @@ func DeleteContest(ctx *macaron.Context) {
 //route: /contests/:cid/rank
 //show contest ranklist
 func GetRank(ctx *macaron.Context) {
-	fmt.Println("GetRank")
+	cid := ctx.Params(":cid")
+
+	contestId, err := strconv.ParseInt(cid, 10, 64)
+	if err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
+
+	// find users who have participated
+	var users []string
+	err = db.Engine.Table("rank").Cols("user_name").Find(&users, &Rank{ContestId: contestId})
+	if err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
+	spew.Dump(users)
+
+	unique := make(map[string]int)
+
+	type UserRank struct {
+		TotalScore    float64
+		TotalPenalty  int64
+		ProblemScores []Rank
+	}
+	var ranklist []UserRank
+
+	// now, get list of problems solved by each user
+	for _, username := range users {
+		if unique[username] == 1 {
+			continue
+		}
+		unique[username] = 1
+
+		spew.Dump(username)
+
+		var rank []Rank
+		err = db.Engine.Find(&rank, &Rank{ContestId: contestId, UserName: username})
+		if err != nil {
+			ctx.Resp.Write([]byte(err.Error()))
+			return
+		}
+
+		var totalScore float64
+		var totalPenalty int64
+		for _, myrank := range rank {
+			totalScore += myrank.Score
+			totalPenalty += myrank.Penalty
+		}
+
+		userRank := UserRank{
+			TotalScore:    totalScore,
+			TotalPenalty:  totalPenalty,
+			ProblemScores: rank,
+		}
+
+		ranklist = append(ranklist, userRank)
+	}
+	spew.Dump(ranklist)
+
+	sort.Slice(ranklist, func(i, j int) bool {
+		if ranklist[i].TotalScore == ranklist[j].TotalScore {
+			return ranklist[i].TotalPenalty < ranklist[j].TotalPenalty
+		}
+		return ranklist[i].TotalScore > ranklist[j].TotalScore
+	})
+	spew.Dump(ranklist)
+	ctx.Data["ranklist"] = ranklist
+	ctx.HTML(200, "ranklist")
 }
 
 //route: /contests/:cid/allsubmissions
