@@ -18,23 +18,47 @@
     <script src="/js/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous">
     </script>
     <!--start of Navigation bar-->
-    <div id="nav-placeholder">
-    </div>
+  <div id="nav-placeholder">
+    <nav class="mb-3 navbar navbar-expand-lg navbar-dark elegant-color">
+        <a class="navbar-brand" href="/">Online-Judge</a>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent-4">
+            <ul id="navitem" class="navbar-nav mr-auto">
+                <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
+                <a class="nav-link" href="/contests">Contests <span class="sr-only">(current)</span></a>
+            </ul>
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="#"><i class="fa fa-envelope"></i> Contact <span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item dropdown"> <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink-4" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-user"></i> Profile </a>
+                  <div class="dropdown-menu dropdown-menu-right dropdown-cyan" aria-labelledby="navbarDropdownMenuLink-4">
+                      <a class="dropdown-item" href="#">My account</a>
+                      <a class="dropdown-item" href="/signout">Log out</a>
+                  </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+  </div>
+
     <script>
-      var loggedIn = {{ .Login}};
-      if(loggedIn) {
+    var loggedIn = {{.Login}};
+    var contest ={{.Contest}};
+    console.log(contest);
+    if(loggedIn) {
         $(function() {
-          $("#nav-placeholder").load("/navLoggedIn.html");
-        }
-         );
-      }
-      else {
+            //$("#nav-placeholder").load("/navLoggedIn.html");
+            console.log(contest["Id"]);
+            $("#navitem").append('<a class="nav-link" href="/contests/' + contest["Id"] + '">Dashboard<span class="sr-only">(current)</span></a>');
+            $("#navitem").append('<a class="nav-link" href="/contests/' + contest["Id"] + '/rank">Standings<span class="sr-only">(current)</span></a>');
+        });
+    } else {
         $(function() {
-          $("#nav-placeholder").load("/navLoggedOut.html");
-        }
-         );
-      }
+            $("#nav-placeholder").load("/navLoggedOut.html");
+        });
+    }
     </script>
+
     <!--end of Navigation bar-->
     <!-- SCRIPTS -->
     <!-- JQuery -->

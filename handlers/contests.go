@@ -125,12 +125,6 @@ func GetAllContests(ctx *macaron.Context) {
 //route: /contests/new
 //create a new contest, admin must be logged in
 func GetNewContest(ctx *macaron.Context) {
-	//only admin can view this page
-	if ctx.Data["Username"] != "admin" {
-		ctx.Resp.Write([]byte("unauthorized. only admin can create a new contest"))
-		return
-	}
-
 	//if authorised then only can view the page
 	ctx.HTML(200, "new_contest")
 }
@@ -180,12 +174,6 @@ func newContestForm(ctx *macaron.Context, contest Contest, update bool) (Contest
 //route: /contests/new POST
 //create a new contest, admin must be logged in
 func PostContest(ctx *macaron.Context, contest Contest) {
-	//only admin has this privilage
-	if ctx.Data["Username"] != "admin" {
-		ctx.Resp.Write([]byte("unauthorized. only admin can create a new contest"))
-		return
-	}
-
 	newContest, err := newContestForm(ctx, contest, false)
 
 	if err != nil {
@@ -288,7 +276,7 @@ func GetRank(ctx *macaron.Context) {
 
 	// find users who have participated
 	var users []string
-	err = db.Engine.Table("rank").Cols("user_name").Find(&users, &Rank{ContestId: contestId})
+	err = db.Engine.Table("rank").Where("contest_id = ?", contestId).Cols("user_name").Find(&users)
 	if err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
 		return

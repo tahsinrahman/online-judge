@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/tahsinrahman/online-judge/db"
 	"github.com/tahsinrahman/online-judge/handlers"
@@ -59,7 +60,9 @@ func CheckProblem(ctx *macaron.Context) {
 		return
 	}
 
-	var problem = handlers.Problem{ProblemId: pid}
+	contest := ctx.Data["Contest"].(handlers.Contest)
+
+	var problem = handlers.Problem{ContestId: contest.Id, ProblemId: pid}
 	has, err := db.Engine.Get(&problem)
 
 	if err != nil {
@@ -112,4 +115,37 @@ func AddSubmissions(ctx *macaron.Context) {
 	}
 
 	ctx.Data["Submissions"] = submissions
+}
+
+func CheckStartTime(ctx *macaron.Context) {
+	contest, _ := ctx.Data["Contest"].(handlers.Contest)
+
+	if time.Now().After(contest.ContestStartTime) {
+		return
+	}
+
+	if ctx.Data["Username"] != nil && ctx.Data["Username"].(string) != contest.Manager {
+		ctx.Resp.Write([]byte("unauthorized. only contest manager can update contest"))
+		return
+	}
+}
+
+func CheckAdmin(ctx *macaron.Context) {
+	//only admin has this privilage
+	if ctx.Data["Username"] != "admin" {
+		ctx.Resp.Write([]byte("unauthorized. only admin can create a new contest"))
+		return
+	}
+}
+
+func CheckEndTime(ctx *macaron.Context) {
+	contest, _ := ctx.Data["Contest"].(handlers.Contest)
+
+	if time.Now().Before(contest.ContestEndTime) {
+		return
+	}
+	if ctx.Data["Username"] != nil && ctx.Data["Username"].(string) != contest.Manager {
+		ctx.Resp.Write([]byte("contest ended"))
+		return
+	}
 }

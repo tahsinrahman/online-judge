@@ -35,15 +35,13 @@ func main() {
 	m.Group("/contests", func() {
 		m.Get("/", handlers.GetAllContests) //done
 
-		m.Get("/new", handlers.GetNewContest)                                  //done
-		m.Post("/new", binding.Bind(handlers.Contest{}), handlers.PostContest) //done
+		m.Get("/new", middlewares.CheckAdmin, handlers.GetNewContest)                                  //done
+		m.Post("/new", middlewares.CheckAdmin, binding.Bind(handlers.Contest{}), handlers.PostContest) //done
 
 		m.Group("/:cid", func() {
 			m.Get("/", handlers.GetDashboard) //done
 
 			m.Group("", func() {
-				m.Delete("/", handlers.DeleteContest) //TODO:
-
 				m.Get("/update", handlers.GetUpdateContest)                              //done
 				m.Post("/update", binding.Bind(handlers.Contest{}), handlers.PutContest) //done
 
@@ -52,32 +50,27 @@ func main() {
 			}, middlewares.CheckManager)
 
 			m.Group("/:pid", func() {
-				m.Get("/", middlewares.AddSubmissions, handlers.GetProblem)
-				m.Delete("/", handlers.DeleteProblem)
+				m.Get("/", middlewares.CheckStartTime, middlewares.AddSubmissions, handlers.GetProblem)
+				//m.Delete("/", handlers.DeleteProblem)
 				//m.Post("/update", binding.Bind(handlers.Problem{}), binding.MultipartForm(handlers.ProblemDataset{}), handlers.PutPostProblem)
 
-				m.Get("/dload/:type/:id", handlers.DownloadTest)
-				m.Get("/tests", middlewares.AddTests, handlers.GetList)
-				m.Post("/tests", binding.Bind(handlers.ProblemDataset{}), handlers.AddNewTest)
-				m.Post("/submit", binding.MultipartForm(handlers.Submission{}), handlers.SubmitProblem)
+				m.Get("/dload/:type/:id", middlewares.CheckManager, handlers.DownloadTest)
+				m.Get("/tests", middlewares.CheckManager, middlewares.AddTests, handlers.GetList)
+				m.Post("/tests", middlewares.CheckManager, binding.Bind(handlers.ProblemDataset{}), handlers.AddNewTest)
+				m.Post("/submit", middlewares.CheckStartTime, middlewares.CheckEndTime, binding.MultipartForm(handlers.Submission{}), handlers.SubmitProblem)
 
 				m.Group("/update", func() {
 					m.Get("/", handlers.UpdateProblem)
 					m.Post("/description", binding.Bind(handlers.Problem{}), handlers.UpdateProblemDescripton)
-					m.Post("/tests", binding.Bind(handlers.Problem{}), handlers.UpdateProblemTests)
-					m.Post("/limits", binding.Bind(handlers.Problem{}), handlers.UpdateProblemLimits)
 					m.Delete("/:id", handlers.DeleteTest)
-				}, middlewares.AddTests)
+				}, middlewares.CheckManager, middlewares.AddTests)
 			}, middlewares.CheckProblem) //need to add middleware to check if problem exists
 
 			m.Get("/rank", handlers.GetRank)
-			m.Get("/allsubmissions", handlers.GetAllSubmissions)
-			m.Get("/mysubmissions", handlers.GetMySubmissions)
 		}, middlewares.CheckContestExistance)
 	})
 
 	handlers.Init()
-	// create files for old datasets
 
 	//starting the server
 	m.Run()

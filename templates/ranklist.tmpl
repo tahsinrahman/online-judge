@@ -25,21 +25,44 @@ p {
 }
 </style>
 
-    <!--start of Navigation bar-->
-    <div id="nav-placeholder"> </div>
+  <div id="nav-placeholder">
+    <nav class="mb-3 navbar navbar-expand-lg navbar-dark elegant-color">
+        <a class="navbar-brand" href="/">Online-Judge</a>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent-4">
+            <ul id="navitem" class="navbar-nav mr-auto">
+                <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
+                <a class="nav-link" href="/contests">Contests <span class="sr-only">(current)</span></a>
+            </ul>
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="#"><i class="fa fa-envelope"></i> Contact <span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item dropdown"> <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink-4" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-user"></i> Profile </a>
+                  <div class="dropdown-menu dropdown-menu-right dropdown-cyan" aria-labelledby="navbarDropdownMenuLink-4">
+                      <a class="dropdown-item" href="#">My account</a>
+                      <a class="dropdown-item" href="/signout">Log out</a>
+                  </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+  </div>
 
     <script>
     var loggedIn = {{.Login}};
     if(loggedIn) {
         $(function() {
-              $("#nav-placeholder").load("/navLoggedIn.html");
+            //$("#nav-placeholder").load("/navLoggedIn.html");
+            var contset = {{.Contest}}
+            console.log(contest["Id"]);
+            $("#navitem").append('<a class="nav-link" href="/contests/' + contest["Id"] + '">Dashboard<span class="sr-only">(current)</span></a>');
+            $("#navitem").append('<a class="nav-link" href="/contests/' + contest["Id"] + '/rank">Standings<span class="sr-only">(current)</span></a>');
         });
     } else {
         $(function() {
-              $("#nav-placeholder").load("/navLoggedOut.html");
+            $("#nav-placeholder").load("/navLoggedOut.html");
         });
     }
-
     </script>
     <!--end of Navigation bar-->
 
@@ -65,8 +88,8 @@ p {
             <thead>
                 <tr id="table-head">
                     <th>#</th>
-                    <th>Name</th>
-                    <th>Score</th>
+                    <th class="text-center">Name</th>
+                    <th class="text-center">Score</th>
                 </tr>
             </thead>
             <tbody id="list">
@@ -92,7 +115,7 @@ p {
 
     for(var i = 0; contest != null && i < contest.ProblemCount; i++) {
         var mydiv = alphabet[i];
-        $('#table-head').append('<th>' + mydiv+ '</th>');
+        $('#table-head').append('<th class="text-center">' + mydiv+ '</th>');
     }
 
 for(var i = 0; ranklist != null && i < ranklist.length; i++) {
@@ -100,9 +123,9 @@ for(var i = 0; ranklist != null && i < ranklist.length; i++) {
     var username = myrank["ProblemScores"][0]["UserName"];
     var mydiv = `
     <tr>
-        <td>${i+1}</td>
-        <td>${username}</td>
-        <td>
+        <td class="text-center">${i+1}</td>
+        <td class="text-center">${username}</td>
+        <td class="text-center">
             <h6 class="h6-responsive">
                 <div><span class="badge blue">${myrank["TotalScore"]}</span></div>
                 <div><span class="badge black">${myrank["TotalPenalty"]}</span></div>
@@ -110,7 +133,7 @@ for(var i = 0; ranklist != null && i < ranklist.length; i++) {
         </td>
         `;
     for(var j = 0; contest != null && j < contest.ProblemCount; j++) {
-        mydiv += `<td id="${username}-${j+1}"></td>`;
+        mydiv += `<td class="text-center" id="${username}-${j+1}"></td>`;
     }
     mydiv += '</tr>';
 

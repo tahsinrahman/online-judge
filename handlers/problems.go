@@ -52,7 +52,7 @@ type Submission struct {
 type Rank struct {
 	Id        int64
 	ContestId int64
-	ProblemId int64
+	ProblemId int
 	UserName  string
 	Tries     int
 	Penalty   int64
@@ -317,21 +317,11 @@ func AddNewTest(ctx *macaron.Context, dataset ProblemDataset) {
 	}
 }
 
-func UpdateProblemTests(ctx *macaron.Context) {
-}
-func UpdateProblemLimits(ctx *macaron.Context) {
-}
-
-//route: /contests/:cid/:pid DELETE
-func DeleteProblem(ctx *macaron.Context) {
-	fmt.Println("GetProblem")
-}
-
 func updateSubmissionStatus(submission *Submission, contest *Contest, problem *Problem) error {
 	// now
 	rank := Rank{
 		ContestId: contest.Id,
-		ProblemId: problem.Id,
+		ProblemId: problem.ProblemId,
 		UserName:  submission.UserName,
 	}
 	has, err := db.Engine.Get(&rank)
@@ -343,13 +333,12 @@ func updateSubmissionStatus(submission *Submission, contest *Contest, problem *P
 	if has {
 		if rank.Score < submission.Points {
 			rank.Score = submission.Points
-			rank.Penalty = int64(contest.ContestStartTime.Sub(submission.Time).Minutes()) + int64(rank.Tries*20)
+			rank.Penalty = int64(submission.Time.Sub(contest.ContestStartTime).Minutes()) + int64(rank.Tries*20)
 			rank.Tries++
 		} else {
 			rank.Tries++
 		}
 
-		spew.Dump(int(rank.Score), problem.MaxPoint)
 		if int(rank.Score) == problem.MaxPoint {
 			rank.Status = 1
 			spew.Dump(rank.Status)
@@ -364,7 +353,11 @@ func updateSubmissionStatus(submission *Submission, contest *Contest, problem *P
 		rank.Score = submission.Points
 		rank.Tries = 1
 		if rank.Score > 0 {
-			rank.Penalty = int64(contest.ContestStartTime.Sub(submission.Time).Minutes())
+			rank.Penalty = int64(submission.Time.Sub(contest.ContestStartTime).Minutes())
+		}
+		if int(rank.Score) == problem.MaxPoint {
+			rank.Status = 1
+			spew.Dump(rank.Status)
 		}
 
 		// insert
@@ -380,9 +373,13 @@ func updateSubmissionStatus(submission *Submission, contest *Contest, problem *P
 
 func compile(compileCmd string, submission *Submission, contest *Contest, problem *Problem) bool {
 	args := strings.Split(compileCmd, " ")
+	spew.Dump(args)
 	cmd := exec.Command(args[0], args[1:]...)
+	var buf bytes.Buffer
+	cmd.Stderr = &buf
 	err := cmd.Run()
 	if err != nil {
+		spew.Dump(buf.String())
 		submission.Status = "compilation error"
 		err = updateSubmissionStatus(submission, contest, problem)
 		if err != nil {
@@ -393,66 +390,79 @@ func compile(compileCmd string, submission *Submission, contest *Contest, proble
 	return true
 }
 
+func run(cid, pid string, submission Submission, contest *Contest, problem *Problem) {
+	// now run for all tests
+	var data []Dataset
+	err := db.Engine.Find(&data, &Dataset{ProblemId: submission.ProblemId})
+	if err != nil {
+		panic(err)
+	}
+
+	dataPath := filepath.Join("dataset", cid, pid)
+
+	total, maxPossible := 0, 0
+	for _, dataset := range data {
+		submissionId := strconv.FormatInt(submission.Id, 10)
+		datasetId := strconv.FormatInt(dataset.Id, 10)
+
+		cmdRun := exec.Command("/bin/bash", "scripts/runTest.sh", dataPath, submissionId, datasetId, fmt.Sprintf("%v", problem.TimeLimit), submission.Language, submission.Source.Filename)
+
+		var buf bytes.Buffer
+		cmdRun.Stdout = &buf
+
+		err = cmdRun.Run()
+		if err == nil {
+			total += dataset.Weight
+		}
+		spew.Dump(buf.String())
+		if buf.Len() != 0 && len(submission.Status) != 0 {
+			submission.Status = buf.String()
+			if submission.Status == "139\n" {
+				submission.Status = "Runtime Error"
+			} else if submission.Status == "WA\n" {
+				submission.Status = "Wrong Answer"
+			} else {
+				submission.Status = "Time Limit Exceeded"
+			}
+		}
+		maxPossible += dataset.Weight
+	}
+
+	if total == maxPossible {
+		submission.Status = "Accepted"
+	}
+
+	submission.Points = float64(problem.MaxPoint) * float64(total) / float64(maxPossible)
+	err = updateSubmissionStatus(&submission, contest, problem)
+	if err != nil {
+		panic(err)
+	}
+}
+
 //route: /contests/:cid/:pid POST
 //submit problem if eligible and logged in
 func SubmitProblem(submission Submission, ctx *macaron.Context) {
-	runSubmission := func(dataPath, sourcePath, filename, execName, timelimit string, solution Submission, problem *Problem, contest *Contest) {
+	runSubmission := func(cid, pid, sourcePath, filename, execName string, solution Submission, problem *Problem, contest *Contest) {
 		switch solution.Language {
 		case "java":
+			compileCmd := fmt.Sprintf("javac %s", filename)
+			if !compile(compileCmd, &submission, contest, problem) {
+				spew.Dump("compilation error")
+				return
+			}
+			run(cid, pid, submission, contest, problem)
 		case "c++":
 			compileCmd := fmt.Sprintf("g++ -O3 -std=c++14 -o %s %s", execName, filename)
 			if !compile(compileCmd, &submission, contest, problem) {
 				return
 			}
-
-			// now run for all tests
-			var data []Dataset
-			err := db.Engine.Find(&data, &Dataset{ProblemId: submission.ProblemId})
-			if err != nil {
-				panic(err)
-			}
-
-			total, maxPossible := 0, 0
-			for _, dataset := range data {
-				submissionId := strconv.FormatInt(submission.Id, 10)
-				datasetId := strconv.FormatInt(dataset.Id, 10)
-
-				cmdRun := exec.Command("/bin/bash", "scripts/runTest.sh", dataPath, submissionId, datasetId, timelimit)
-
-				var buf bytes.Buffer
-				cmdRun.Stdout = &buf
-
-				err = cmdRun.Run()
-				if err == nil {
-					total += dataset.Weight
-				}
-				if buf.Len() != 0 && len(submission.Status) != 0 {
-					submission.Status = buf.String()
-					if submission.Status == "139\n" {
-						submission.Status = "Runtime Error"
-					} else if submission.Status == "WA\n" {
-						submission.Status = "Wrong Answer"
-					} else {
-						submission.Status = "Time Limit Exceeded"
-					}
-				}
-				maxPossible += dataset.Weight
-			}
-
-			if total == maxPossible {
-				submission.Status = "Accepted"
-			}
-
-			submission.Points = float64(problem.MaxPoint) * float64(total) / float64(maxPossible)
-			err = updateSubmissionStatus(&submission, contest, problem)
-			if err != nil {
-				panic(err)
-			}
-
-			// update database
+			run(cid, pid, submission, contest, problem)
 		case "c":
 			compileCmd := fmt.Sprintf("gcc -O3 -o %s %s", execName, filename)
-			compile(compileCmd, &submission, contest, problem)
+			if !compile(compileCmd, &submission, contest, problem) {
+				return
+			}
+			run(cid, pid, submission, contest, problem)
 		default:
 			panic("unrecognized format")
 		}
@@ -495,7 +505,7 @@ func SubmitProblem(submission Submission, ctx *macaron.Context) {
 	pid := ctx.Params(":pid")
 
 	// run go routine
-	go runSubmission(filepath.Join("dataset", cid, pid), path, filepath.Join(path, submission.Source.Filename), filepath.Join(path, submissionId), fmt.Sprintf("%v", problem.TimeLimit), submission, &problem, &contest)
+	go runSubmission(cid, pid, path, filepath.Join(path, submission.Source.Filename), filepath.Join(path, submissionId), submission, &problem, &contest)
 
 	ctx.Redirect("/contests/" + cid + "/" + pid)
 }

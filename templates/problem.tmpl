@@ -50,6 +50,7 @@
             var contset = {{.Contest}}
             console.log(contest["Id"]);
             $("#navitem").append('<a class="nav-link" href="/contests/' + contest["Id"] + '">Dashboard<span class="sr-only">(current)</span></a>');
+            $("#navitem").append('<a class="nav-link" href="/contests/' + contest["Id"] + '/rank">Standings<span class="sr-only">(current)</span></a>');
         });
     } else {
         $(function() {
@@ -90,7 +91,7 @@
     <div id="input"></div>
 
     <br><h3 class="h3-responsive">Output Specification</h3> <br>
-    <div id="input"></div>
+    <div id="output"></div>
 
     <br><h3 class="h3-responsive">Sample Input</h3> <br>
     <div id="sample_input"></div>
@@ -114,7 +115,7 @@
         <p id="update"> </p>
       </div>
 
-      <div class="container">
+      <div class="container" id="problem-submit">
         <br>
         <form id = "form" enctype="multipart/form-data">
           <select name="language" class="browser-default custom-select mb-3" required="true">
@@ -299,6 +300,7 @@ var x = setInterval(function() {
               clearInterval(x);
               document.getElementById("status").innerHTML = "Contest Ended";
               document.getElementById("demo").innerHTML = "";
+              //$('#problem-submit').hide();
               return;
           }
           var distanceToStart = countDownStart - date;
