@@ -40,7 +40,8 @@ func main() {
 		m.Post("/new", middlewares.CheckAdmin, binding.Bind(handlers.Contest{}), handlers.PostContest) //done
 
 		m.Group("/:cid", func() {
-			m.Get("/", handlers.GetDashboard) //done
+			m.Get("/", handlers.GetDashboard)    //done
+			m.Get("/auth", handlers.ContestAuth) //done
 
 			m.Group("", func() {
 				m.Get("/update", handlers.GetUpdateContest)                              //done
@@ -68,7 +69,7 @@ func main() {
 			}, middlewares.CheckProblem) //need to add middleware to check if problem exists
 
 			m.Get("/rank", handlers.GetRank)
-		}, middlewares.CheckContestExistance)
+		}, middlewares.CheckContestExistance, middlewares.AddContestPermission)
 	})
 
 	handlers.Init()

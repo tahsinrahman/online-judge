@@ -23,9 +23,16 @@ type Contest struct {
 	Duration         string    `form:"duration"`
 	ContestStartTime time.Time //saved in mysql after processing from startdate
 	ContestEndTime   time.Time //saved in mysql after processing formdata
+	Password         string    `form:"password"`
 	Manager          string    `form:"manager"`
 	ManagerId        int64
 	ProblemCount     int
+}
+
+type ContestPermission struct {
+	Id        int64
+	UserName  string
+	ContestId int64
 }
 
 //converts to time.Time from string
@@ -347,4 +354,10 @@ func GetAllSubmissions(ctx *macaron.Context) {
 //show my submission, if logged in and eligible
 func GetMySubmissions(ctx *macaron.Context) {
 	fmt.Println("GetMySubmissions")
+}
+
+func ContestAuth(ctx *macaron.Context) {
+	username := ctx.Data["Username"].(string)
+	contest := ctx.Data["Contest"].(Contest)
+	db.Engine.Insert(&ContestPermission{UserName: username, ContestId: contest.Id})
 }

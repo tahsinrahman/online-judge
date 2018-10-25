@@ -153,3 +153,19 @@ func CheckEndTime(ctx *macaron.Context) {
 		return
 	}
 }
+
+func AddContestPermission(ctx *macaron.Context) {
+	if ctx.Data["Username"] != nil {
+		username := ctx.Data["Username"].(string)
+		contest := ctx.Data["Contest"].(handlers.Contest)
+
+		has, err := db.Engine.Get(&handlers.ContestPermission{UserName: username, ContestId: contest.Id})
+
+		if err != nil {
+			ctx.Resp.Write([]byte(err.Error()))
+			return
+		}
+
+		ctx.Data["Permission"] = has
+	}
+}

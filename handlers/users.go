@@ -20,6 +20,7 @@ func Init() {
 	db.Engine.Sync(new(Dataset))
 	db.Engine.Sync(new(Submission))
 	db.Engine.Sync(new(Rank))
+	db.Engine.Sync(new(ContestPermission))
 }
 
 //homepage

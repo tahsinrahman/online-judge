@@ -81,12 +81,22 @@
           <h4 class="h4-responsive">Basic Information
           </h4>
           <br>
+
           <!--First row-->
-          <div class="md-form">
-            <input value={{.Contest.Name}} type="text" id="name" name="name" class="form-control" required="true">
-            <label for="name" class="">Contest Name </label>
+          <div class="row">
+              <div class="col-md-9">
+                  <div class="md-form">
+                    <input value={{.Contest.Name}} type="text" id="name" name="name" class="form-control" required="true">
+                    <label for="name" class="">Contest Name </label>
+                  </div>
+              </div>
+              <div class="col-md-3">
+                  <div class="md-form">
+                    <input value={{.Contest.Password}} type="text" id="password" name="password" class="form-control">
+                    <label for="password" class="">Contest Password </label>
+                  </div>
+              </div>
           </div>
-          <!--/.First row-->
           <br>
           <!--Third row-->
           <div class="row">

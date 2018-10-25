@@ -77,8 +77,9 @@ p {
     <script type="text/javascript" src="/js/mdb.min.js"></script>
 </head>
 
+
 <body>
-  <div class=row container-fluid>
+  <div class="row container-fluid">
     <div id="problem_list" class="col-md-8 container-fluid jumbotron" style="width: 100%; margin-top: 30px; margin-left: 30px">
       <h1 id = "contest_name" class="text-center"></h1>
     </div>
@@ -88,7 +89,33 @@ p {
       <p id="update"> </p>
     </div>
   </div>
-  
+
+<script>
+    while("{{.Permission}}" == "false") {
+        pass = promptFunc();
+        console.log(pass);
+        if (pass == null) {
+            $('#problem_list').hide();
+            break;
+        }
+        if (pass == "{{.Contest.Password}}") {
+            //do ajax request
+            var url = '/contests/' + {{.Contest.Id}} + '/auth'
+            console.log(url);
+            $.ajax({
+              type: "GET",
+                url: url,
+            });
+            break;
+        }
+    }
+
+    function promptFunc() {
+        var pass=prompt("Please enter contest password");
+        return pass;
+    }
+</script>
+
   <script>
     var user = {{.Username}};
     var problems = {{.Problems}};
