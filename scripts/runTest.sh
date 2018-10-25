@@ -16,6 +16,10 @@ if [ "$5" == "java" ]; then
     pushd $SOURCE_PATH
     timeout $TIME_LIMIT java $filename < in > myout
     popd
+elif [ "$5" == "python2" ]; then
+    docker run --rm -v $(pwd)/$SOURCE_PATH:/judge -w /judge debian /bin/sh -c "timeout $TIME_LIMIT python2 $6 < in > myout"
+elif [ "$5" == "python3" ]; then
+    docker run --rm -v $(pwd)/$SOURCE_PATH:/judge -w /judge debian /bin/sh -c "timeout $TIME_LIMIT python3 $6 < in > myout"
 else
     docker run --rm -v $(pwd)/$SOURCE_PATH:/judge -w /judge debian /bin/sh -c "timeout $TIME_LIMIT ./$SUBMISSION_ID < in > myout"
 fi

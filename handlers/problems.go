@@ -463,6 +463,18 @@ func SubmitProblem(submission Submission, ctx *macaron.Context) {
 				return
 			}
 			run(cid, pid, submission, contest, problem)
+		case "python2":
+			compileCmd := fmt.Sprintf("python2 -m py_compile %s", filename)
+			if !compile(compileCmd, &submission, contest, problem) {
+				return
+			}
+			run(cid, pid, submission, contest, problem)
+		case "python3":
+			compileCmd := fmt.Sprintf("python3 -m py_compile %s", filename)
+			if !compile(compileCmd, &submission, contest, problem) {
+				return
+			}
+			run(cid, pid, submission, contest, problem)
 		default:
 			panic("unrecognized format")
 		}
