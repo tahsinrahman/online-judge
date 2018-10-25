@@ -12,9 +12,9 @@ import (
 //get username from cookie, check if username exists
 //TODO: securecookie using token
 func CheckAuthentication(ctx *macaron.Context) {
-	cookie := ctx.GetCookie("user")
+	cookie, has := ctx.GetSecureCookie("user")
 
-	if cookie == "" {
+	if !has {
 		return
 	}
 
@@ -105,6 +105,10 @@ func AddTests(ctx *macaron.Context) {
 func AddSubmissions(ctx *macaron.Context) {
 	problem, _ := ctx.Data["Problem"].(handlers.Problem)
 	username, _ := ctx.Data["Username"].(string)
+
+	if username == "" {
+		return
+	}
 
 	var submissions []handlers.Submission
 	err := db.Engine.Find(&submissions, &handlers.Submission{ProblemId: problem.Id, UserName: username})

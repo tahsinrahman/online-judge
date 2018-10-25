@@ -17,6 +17,7 @@ func main() {
 	m := macaron.Classic()
 
 	//middlewares for every route
+	m.SetDefaultCookieSecret("tahsin")
 	m.Use(macaron.Renderer())              //for html rendering
 	m.Use(middlewares.CheckAuthentication) //check cookie
 

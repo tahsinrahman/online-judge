@@ -120,8 +120,7 @@ func PostSignIn(ctx *macaron.Context, user Users) {
 	}
 
 	//setcookie
-	//TODO: set secure cookie
-	ctx.SetCookie("user", user.Username)
+	ctx.SetSecureCookie("user", user.Username)
 
 	//redirect to home
 	ctx.Redirect(ctx.Req.URL.Host, 302)

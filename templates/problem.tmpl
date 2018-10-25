@@ -273,6 +273,10 @@ $(function () {
     }
   });
 });
+
+if ({{.Username}} == "") {
+    $('#problem-submit').hide();
+}
 </script>
 
 
@@ -300,7 +304,7 @@ var x = setInterval(function() {
               clearInterval(x);
               document.getElementById("status").innerHTML = "Contest Ended";
               document.getElementById("demo").innerHTML = "";
-              //$('#problem-submit').hide();
+              $('#problem-submit').hide();
               return;
           }
           var distanceToStart = countDownStart - date;
