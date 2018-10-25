@@ -184,6 +184,7 @@
     });
   });
     var submissions = {{.Submissions}};
+    var contest = {{.Contest}};
     console.log(submissions);
     var len = 0;
     if (submissions != null) {
@@ -199,10 +200,11 @@
         } else if (current == "pending") {
             color = "default";
         }
+        var url = '/contests/' + contest["Id"] + '/submissions/' + submissions[i]["Id"];
         var mydiv = `
             <div class="container">
 				<h4><span class="badge badge-${color}">${submissions[i]["Points"]}</span>
-				<a href="#!" class="badge badge-${color}" data-toggle="modal" data-target="#modalLoginForm" style="white-space: pre-line;" onclick="show_submission(${i})">${submissions[i]["Status"]}</a></h4>
+                <a href=${url} class="badge badge-${color}" style="white-space: pre-line;">${submissions[i]["Status"]}</a></h4>
             </div>
         `
 

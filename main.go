@@ -42,6 +42,8 @@ func main() {
 		m.Group("/:cid", func() {
 			m.Get("/", handlers.GetDashboard)    //done
 			m.Get("/auth", handlers.ContestAuth) //done
+			m.Get("/rank", handlers.GetRank)
+			m.Get("/submissions/:id", handlers.GetSubmission)
 
 			m.Group("", func() {
 				m.Get("/update", handlers.GetUpdateContest)                              //done
@@ -68,7 +70,6 @@ func main() {
 				}, middlewares.CheckManager, middlewares.AddTests)
 			}, middlewares.CheckProblem) //need to add middleware to check if problem exists
 
-			m.Get("/rank", handlers.GetRank)
 		}, middlewares.CheckContestExistance, middlewares.AddContestPermission)
 	})
 

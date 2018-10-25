@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>Online Judge</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="/fontawesome-all.css">
+    <!-- Bootstrap core CSS -->
+    <link href="/css/bootstrap.min.css.map" rel="stylesheet">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Material Design Bootstrap -->
+    <link href="/css/mdb.min.css" rel="stylesheet">
+    <!-- Your custom styles (optional) -->
+    <link href="/css/style.css" rel="stylesheet">
+
+    <script src="/js/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+
+
+  <div id="nav-placeholder">
+    <nav class="mb-3 navbar navbar-expand-lg navbar-dark elegant-color">
+        <a class="navbar-brand" href="/">Online-Judge</a>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent-4">
+            <ul id="navitem" class="navbar-nav mr-auto">
+                <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
+                <a class="nav-link" href="/contests">Contests <span class="sr-only">(current)</span></a>
+            </ul>
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="#"><i class="fa fa-envelope"></i> Contact <span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item dropdown"> <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink-4" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-user"></i> Profile </a>
+                  <div class="dropdown-menu dropdown-menu-right dropdown-cyan" aria-labelledby="navbarDropdownMenuLink-4">
+                      <a class="dropdown-item" href="#">My account</a>
+                      <a class="dropdown-item" href="/signout">Log out</a>
+                  </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+  </div>
+
+    <script>
+    var loggedIn = {{.Login}};
+    var contest = {{.Contest}}
+    if(loggedIn) {
+        $(function() {
+            //$("#nav-placeholder").load("/navLoggedIn.html");
+            var contset = {{.Contest}}
+            console.log(contest["Id"]);
+            $("#navitem").append('<a class="nav-link" href="/contests/' + contest["Id"] + '">Dashboard<span class="sr-only">(current)</span></a>');
+            $("#navitem").append('<a class="nav-link" href="/contests/' + contest["Id"] + '/rank">Standings<span class="sr-only">(current)</span></a>');
+        });
+    } else {
+        $(function() {
+            $("#nav-placeholder").load("/navLoggedOut.html");
+        });
+    }
+    </script>
+    <!--end of Navigation bar-->
+
+    <!-- SCRIPTS -->
+    <!-- JQuery -->
+    <script type="text/javascript" src="/js/jquery-3.2.1.min.js"></script>
+    <!-- Bootstrap tooltips -->
+    <script type="text/javascript" src="/js/popper.min.js"></script>
+    <!-- Bootstrap core JavaScript -->
+    <script type="text/javascript" src="/js/bootstrap.min.js"></script>
+    <!-- MDB core JavaScript -->
+    <script type="text/javascript" src="/js/mdb.min.js"></script>
+</head>
+
+<body>
+<div class="container-fluid">
+    <div class="container-fluid" id="submissionid">
+    </div>
+    <div class="container-fluid jumbotron" id="status">
+        <table class="table table-hover" style="empty-cells: show;">
+            <!--Table head-->
+            <thead>
+                <tr id="table-head">
+                    <th class="text-center">#</th>
+                    <th class="text-center">Author</th>
+                    <th class="text-center">Problem</th>
+                    <th class="text-center">Time</th>
+                    <th class="text-center">Language</th>
+                    <th class="text-center">Points</th>
+                    <th class="text-center">Status</th>
+                </tr>
+            </thead>
+            <tbody id="table-1">
+            </tbody>
+        </table>
+    </div>
+    <div class="row">
+        <div class="container-fluid jumbotron col-md-4" id="data">
+            <table class="table table-hover" style="empty-cells: show;">
+                <!--Table head-->
+                <thead>
+                    <tr id="table-head">
+                        <th class="text-center">#</th>
+                        <th class="text-center">CPU</th>
+                        <th class="text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="table-2">
+                </tbody>
+            </table>
+        </div>
+        <div class="container-fluid jumbotron col-md-7">
+            <h3 class="h3-responsive text-left">Source Code</h3>
+            <pre><code id="source-code"></code></pre>
+        </div>
+</div>
+
+<script>
+var verdicts = {{.Verdicts}};
+var submission = {{.Submission}};
+var problem = {{.Problem}};
+
+console.log(verdicts);
+console.log(submission);
+console.log(problem);
+
+var header = `<h2 class="h2-responsive text-left">Submission ${submission["Id"]}</h2><br>`;
+$('#submissionid').append(header);
+
+var color="danger";
+var current = submission["Status"];
+if (current == "Accepted") {
+    color = "success";
+} else if (current == "pending") {
+    color = "default";
+}
+
+var table1 = `
+<tr>
+    <td class="text-center">${submission["Id"]}</td>
+    <td class="text-center">${submission["UserName"]}</td>
+    <td class="text-center">${problem["Name"]}</td>
+    <td class="text-center">${submission["Time"]}</td>
+    <td class="text-center">${submission["Language"]}</td>
+    <td class="text-center">${submission["Points"]}</td>
+    <td class="text-center"> <h5 class="h5-responsive badge badge-${color}">${submission["Status"]}</h5> </td>
+</tr>
+`;
+$('#table-1').append(table1);
+
+for(var i = 0; verdicts != null && i < verdicts.length; i++) {
+    var color="danger";
+    var current = verdicts[i]["Verdict"];
+    if (current == "Accepted") {
+        color = "success";
+    } else if (current == "pending") {
+        color = "default";
+    }
+    var table2=`
+        <tr>
+            <td class="text-center">${i+1}</td>
+            <td class="text-center">${verdicts[i]["CPU"]}</td>
+            <td class="text-center"> <h5 class="h5-responsive badge badge-${color}">${verdicts[i]["Verdict"]}</h5> </td>
+        </tr>
+    `
+    $('#table-2').append(table2);
+}
+
+
+var mycode = submission["Submission"];
+var pre ='';
+for(var i = 0; i < mycode.length; i++) {
+    if (mycode[i] == '&') pre += '&amp;';
+    else if(mycode[i] == '<') pre += '&lt;';
+    else if(mycode[i] == '>') pre += '&gt;';
+    else pre += mycode[i];
+}
+$('#source-code').append(pre);
+</script>
+
+</body>

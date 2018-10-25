@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -oux pipefail
+set -ou pipefail
 
 DATA_PATH=$1
 SUBMISSION_ID=$2
@@ -21,7 +21,7 @@ elif [ "$5" == "python2" ]; then
 elif [ "$5" == "python3" ]; then
     docker run --rm -v $(pwd)/$SOURCE_PATH:/judge -w /judge debian /bin/sh -c "timeout $TIME_LIMIT python3 $6 < in > myout"
 else
-    docker run --rm -v $(pwd)/$SOURCE_PATH:/judge -w /judge debian /bin/sh -c "timeout $TIME_LIMIT ./$SUBMISSION_ID < in > myout"
+    docker run --rm -v $(pwd)/$SOURCE_PATH:/judge -w /judge debian /bin/bash -c "time timeout $TIME_LIMIT ./$SUBMISSION_ID < in > myout"
 fi
 EXIT_CODE=$?
 

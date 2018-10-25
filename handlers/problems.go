@@ -373,13 +373,11 @@ func updateSubmissionStatus(submission *Submission, contest *Contest, problem *P
 
 func compile(compileCmd string, submission *Submission, contest *Contest, problem *Problem) bool {
 	args := strings.Split(compileCmd, " ")
-	spew.Dump(args)
 	cmd := exec.Command(args[0], args[1:]...)
 	var buf bytes.Buffer
 	cmd.Stderr = &buf
 	err := cmd.Run()
 	if err != nil {
-		spew.Dump(buf.String())
 		submission.Status = "compilation error"
 		err = updateSubmissionStatus(submission, contest, problem)
 		if err != nil {
@@ -388,6 +386,14 @@ func compile(compileCmd string, submission *Submission, contest *Contest, proble
 		return false
 	}
 	return true
+}
+
+type DatasetVerdict struct {
+	Id           int64
+	SubmissionId int64
+	DatasetId    int64
+	Verdict      string
+	CPU          string
 }
 
 func run(cid, pid string, submission Submission, contest *Contest, problem *Problem) {
@@ -407,25 +413,42 @@ func run(cid, pid string, submission Submission, contest *Contest, problem *Prob
 
 		cmdRun := exec.Command("/bin/bash", "scripts/runTest.sh", dataPath, submissionId, datasetId, fmt.Sprintf("%v", problem.TimeLimit), submission.Language, submission.Source.Filename)
 
-		var buf bytes.Buffer
+		var buf, stderr bytes.Buffer
 		cmdRun.Stdout = &buf
+		cmdRun.Stderr = &stderr
 
 		err = cmdRun.Run()
 		if err == nil {
 			total += dataset.Weight
 		}
-		spew.Dump(buf.String())
+
+		verdict := "Accepted"
+
+		submission.Status = buf.String()
 		if buf.Len() != 0 && len(submission.Status) != 0 {
-			submission.Status = buf.String()
 			if submission.Status == "139\n" {
 				submission.Status = "Runtime Error"
+				verdict = "Runtime Error"
 			} else if submission.Status == "WA\n" {
 				submission.Status = "Wrong Answer"
+				verdict = "Wrong Answer"
 			} else {
 				submission.Status = "Time Limit Exceeded"
+				verdict = "Time Limit Exceeded"
 			}
 		}
+
+		spew.Dump(buf.String())
+		spew.Dump(stderr.String())
+
 		maxPossible += dataset.Weight
+
+		// update verdict for this dataset
+		cputime := strings.Split(strings.Split(stderr.String(), "\n")[1], "\t")[1]
+		_, err := db.Engine.Insert(&DatasetVerdict{SubmissionId: submission.Id, DatasetId: dataset.Id, Verdict: verdict, CPU: cputime})
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	if total == maxPossible {
@@ -520,4 +543,34 @@ func SubmitProblem(submission Submission, ctx *macaron.Context) {
 	go runSubmission(cid, pid, path, filepath.Join(path, submission.Source.Filename), filepath.Join(path, submissionId), submission, &problem, &contest)
 
 	ctx.Redirect("/contests/" + cid + "/" + pid)
+}
+
+func GetSubmission(ctx *macaron.Context) {
+	var verdicts []DatasetVerdict
+	err := db.Engine.Where("submission_id = ?", ctx.Params("id")).Find(&verdicts)
+
+	if err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
+
+	var submission Submission
+	_, err = db.Engine.Id(ctx.Params("id")).Get(&submission)
+	if err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
+
+	var problem Problem
+	_, err = db.Engine.Id(submission.ProblemId).Get(&problem)
+	if err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
+
+	ctx.Data["Submission"] = submission
+	ctx.Data["Problem"] = problem
+	ctx.Data["Verdicts"] = verdicts
+
+	ctx.HTML(200, "submission")
 }
