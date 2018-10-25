@@ -414,30 +414,35 @@
         });
 
         $('#add').click(function() {
-            $('#dataset').append('<div class="row"><div class="col-md-2 md-form"> <input type="text" id="label" name="label[]" class="form-control" required="true"> <label for="label" class="">Label</label> </div><div class="col-md-3 form-group"> <label for="data">Input File</label> <input type="file" class="form-control-file" id="data" name="input_data[]" required="true"> </div><div class="col-md-3 form-group"> <label for="data">Output File</label> <input type="file" class="form-control-file" id="data" name="output_data[]" required="true"> </div><div class="col-md-2 md-form"><input type="text" value="100" id="weight" name="weight[]" class="form-control" required="true"><label for="weight">Weight</label></div><div class="col-md-1"><br><button class="btn btn-sm btn-danger" onclick="removefunc(this)">remove</button></div></div>');
-            /*
+            //$('#dataset').append('<div class="row"><div class="col-md-2 md-form"> <input type="text" id="label" name="label[]" class="form-control" required="true"> <label for="label" class="">Label</label> </div><div class="col-md-3 form-group"> <label for="data">Input File</label> <input type="file" class="form-control-file" id="data" name="input_data[]" required="true"> </div><div class="col-md-3 form-group"> <label for="data">Output File</label> <input type="file" class="form-control-file" id="data" name="output_data[]" required="true"> </div><div class="col-md-2 md-form"><input type="text" value="100" id="weight" name="weight[]" class="form-control" required="true"><label for="weight">Weight</label></div><div class="col-md-1"><br><button class="btn btn-sm btn-danger" onclick="removefunc(this)">remove</button></div></div>');
+            var mydiv = `
             <div class="row">
-                <div class="col-md-5 form-group">
-                    <label class="btn btn-primary btn-sm" style="width: 150px !important;" for="my-file-selector">
-                        <input id="my-file-selector" type="file" style="display:none" name="input_file[]"
-                        onchange="$('#upload-file-info').html(this.files[0].name)">
-                        Input  File
-                    </label>
-                    <span class='label label-info' id="upload-file-info"></span>
+                <div class="col-md-3">
+                    <div class="md-form">
+                        <input type="text" id="label" name="label[]" class="form-control" required="true">
+                        <label for="label" class="">Label</label>
+                    </div>
                 </div>
-                <div class="col-md-5 form-group">
-                    <label class="btn btn-primary btn-sm"style="width: 150px !important;" for="my-file-selector-2">
-                        <input id="my-file-selector-2" type="file" style="display:none" name="output_file[]"
-                        onchange="$('#op-file-info').html(this.files[0].name)">
-                        Output File
-                    </label>
-                    <span class='label label-info' id="op-file-info"></span>
+                <div class="col-md-3 form-group">
+                    <label for="data">Input File</label>
+                    <input type="file" class="form-control-file" id="data" name="input_data[]" required="true">
                 </div>
-                <div class="col-sm-2">
+                <div class="col-md-3 form-group">
+                    <label for="data">Output File</label>
+                    <input type="file" class="form-control-file" id="data" name="output_data[]" required="true">
+                </div>
+                <div class="col-md-2">
+                    <div class="md-form">
+                        <input type="text" value="100" id="weight" name="weight[]" class="form-control" required="true">
+                        <label for="weight">Weight</label>
+                    </div>
+                </div>
+                <div class="col-md-1">
                     <br><button class="btn btn-sm btn-danger" onclick="removefunc(this)">remove</button>
                 </div>
             </div>
-            */
+                `;
+            $('#dataset').append(mydiv);
         });
     </script>
 
