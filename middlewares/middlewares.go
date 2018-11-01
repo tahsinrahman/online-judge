@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/tahsinrahman/online-judge/db"
 	"github.com/tahsinrahman/online-judge/handlers"
 	macaron "gopkg.in/macaron.v1"
@@ -22,6 +23,14 @@ func CheckAuthentication(ctx *macaron.Context) {
 	//used it for showing logout option in html
 	ctx.Data["Login"] = 1
 	ctx.Data["Username"] = cookie
+
+	user := handlers.Users{Username: cookie}
+	has, _ = db.Engine.Get(&user)
+
+	if has {
+		spew.Dump(user)
+		ctx.Data["Previlege"] = user.Privilege
+	}
 }
 
 func CheckContestExistance(ctx *macaron.Context) {

@@ -18,12 +18,6 @@
 
     <script src="/js/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
 
-<style>
-p {
-  text-align: center;
-  font-size: 20px;
-}
-</style>
 
   <div id="nav-placeholder">
     <nav class="mb-3 navbar navbar-expand-lg navbar-dark elegant-color">
@@ -50,6 +44,7 @@ p {
 
     <script>
     var loggedIn = {{.Login}};
+    var contest = {{.Contest}}
     if(loggedIn) {
         $(function() {
             //$("#nav-placeholder").load("/navLoggedIn.html");
@@ -78,91 +73,105 @@ p {
 </head>
 
 <body>
-  <div class="row container-fluid">
-    <div class="container-fluid text-center" style="width: 100%; margin-top: 30px;">
-        <h1>{{.Contest.Name}}</h1>
+<div class="container-fluid">
+    <div class="container-fluid">
+        <br>
+        <h2 class="h2-responsive text-center">CSE-101 Lab-1</h2><br>
     </div>
-    <div class="container-fluid" style="margin-top:30px;">
+    <div class="container-fluid jumbotron" id="status">
+        <h4 class="h4-responsive text-left">Problem A</h4><br>
+        <h4 class="h4-responsive text-left">Filtered 20%</h4><br>
         <table class="table table-hover" style="empty-cells: show;">
             <!--Table head-->
             <thead>
                 <tr id="table-head">
-                    <th>#</th>
-                    <th class="text-center">Name</th>
-                    <th class="text-center">Score</th>
+                    <th class="text-center">#</th>
+                    <th class="text-center">Possible Origin</th>
+                    <th class="text-center">Submission</th>
+                    <th class="text-center">Possible Destination</th>
+                    <th class="text-center">Submission</th>
+                    <th class="text-center">Percentage Matched</th>
+                    <th class="text-center">Lines Matched</th>
                 </tr>
             </thead>
-            <tbody id="list">
+            <tbody id="table-1">
+<tr>
+    <td class="text-center">1</td>
+    <td class="text-center">rasel</td>
+    <td class="text-center"><a class="blue-text" href="">601</a></td>
+    <td class="text-center">jami</td>
+    <td class="text-center"><a class="blue-text" href="">631</a></td>
+    <td class="text-center">99</td>
+    <td class="text-center">30</td>
+</tr>
+<tr>
+    <td class="text-center">2</td>
+    <td class="text-center">upol</td>
+    <td class="text-center"><a class="blue-text" href="">649</a></td>
+    <td class="text-center">muktadir</td>
+    <td class="text-center"><a class="blue-text" href="">675</a></td>
+    <td class="text-center">96</td>
+    <td class="text-center">9</td>
+</tr>
+<tr>
+    <td class="text-center">3</td>
+    <td class="text-center">nijhum</td>
+    <td class="text-center"><a class="blue-text" href="">527</a></td>
+    <td class="text-center">jami</td>
+    <td class="text-center"><a class="blue-text" href="">631</a></td>
+    <td class="text-center">43</td>
+    <td class="text-center">12</td>
+</tr>
+<tr>
+    <td class="text-center">4</td>
+    <td class="text-center">nijhum</td>
+    <td class="text-center"><a class="blue-text" href="">527</a></td>
+    <td class="text-center">rasel</td>
+    <td class="text-center"><a class="blue-text" href="">601</a></td>
+    <td class="text-center">42</td>
+    <td class="text-center">14</td>
+</tr>
+<tr>
+    <td class="text-center">5</td>
+    <td class="text-center">nijhum</td>
+    <td class="text-center"><a class="blue-text" href="">527</a></td>
+    <td class="text-center">rushnan</td>
+    <td class="text-center"><a class="blue-text" href="">779</a></td>
+    <td class="text-center">22</td>
+    <td class="text-center">4</td>
+</tr>
             </tbody>
         </table>
     </div>
-  </div>
-</body>
-
-<style>
-.badge {
-  min-width: 70px !important;
-  display: inline-block !important;
-}
-</style>
+</div>
 
 <script>
-    var contest = {{.Contest}};
-    var alphabet= ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O"];
-    var ranklist = {{.ranklist}}
+var submissions = {{.Submissions}};
 
-    console.log(ranklist);
+console.log(submissions);
 
-    for(var i = 0; contest != null && i < contest.ProblemCount; i++) {
-        var mydiv = alphabet[i];
-        $('#table-head').append('<th class="text-center">' + mydiv+ '</th>');
-    }
 
-for(var i = 0; ranklist != null && i < ranklist.length; i++) {
-    var myrank = ranklist[i];
-    var username = myrank["ProblemScores"][0]["UserName"];
-    var mydiv = `
-    <tr>
-        <td class="text-center">${i+1}</td>
-        <td class="text-center">${username}</td>
-        <td class="text-center">
-            <h6 class="h6-responsive">
-                <div><span class="badge blue">${myrank["TotalScore"]}</span></div>
-                <div><span class="badge black">${myrank["TotalPenalty"]}</span></div>
-            </h6>
-        </td>
-        `;
-    for(var j = 0; contest != null && j < contest.ProblemCount; j++) {
-        mydiv += `<td class="text-center" id="${username}-${j+1}"></td>`;
-    }
-    mydiv += '</tr>';
-
-    console.log(mydiv);
-    $('#list').append(mydiv);
+for(var i = 0; submissions != null && i < submissions.length; i++) {
+var color="danger";
+var current = submissions[i]["Status"];
+if (current == "Accepted") {
+    color = "success";
+} else if (current == "pending") {
+    color = "default";
 }
-for(var i = 0; ranklist != null && i < ranklist.length; i++) {
-    var myrank = ranklist[i]["ProblemScores"];
-    var username = myrank[0]["UserName"];
-    console.log(myrank);
-
-    for(var j = 0; myrank != null && j < myrank.length; j++) {
-        var id = username+"-"+myrank[j]["ProblemId"];
-        console.log(id);
-        var color;
-        if (myrank[j]["Status"]) {
-            color="success";
-        } else {
-            color="orange";
-        }
-        var mydiv = `
-            <h6 class="h6-responsive">
-                <div><span class="badge badge-${color}">${myrank[j]["Score"]}</span></div>
-                <div><span class="badge badge-black">${myrank[j]["Tries"]}</span></div>
-            </h6>
-        `
-        $('#' + id).append(mydiv);
-    }
+var table1 = `
+<tr>
+    <td class="text-center">${submissions[i]["Id"]}</td>
+    <td class="text-center">${submissions[i]["UserName"]}</td>
+    <td class="text-center">${submissions[i]["Name"]}</td>
+    <td class="text-center">${submissions[i]["Time"]}</td>
+    <td class="text-center">${submissions[i]["Language"]}</td>
+    <td class="text-center">${submissions[i]["Points"]}</td>
+    <td class="text-center"> <h5 class="h5-responsive badge badge-${color}">${submissions[i]["Status"]}</h5> </td>
+</tr>
+`;
+$('#table-1').append(table1);
 }
-
-
 </script>
+
+</body>

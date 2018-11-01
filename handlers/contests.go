@@ -346,8 +346,25 @@ func GetRank(ctx *macaron.Context) {
 //route: /contests/:cid/allsubmissions
 //show all submissions, sorted by time
 //maybe add filter option
+type ContestSubmission struct {
+	Submission `xorm:"extends"`
+	Name       string
+	ContestId  int64
+}
+
+func (ContestSubmission) TableName() string {
+	return "submission"
+}
 func GetAllSubmissions(ctx *macaron.Context) {
-	fmt.Println("GetAllSubmissions")
+
+	var submissions []ContestSubmission
+	err := db.Engine.Join("INNER", "problem", "problem.id = submission.problem_id").Where("problem.contest_id = ?", ctx.Params("cid")).Find(&submissions)
+	if err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+	}
+	ctx.Data["Submissions"] = submissions
+
+	ctx.HTML(200, "all_submissions")
 }
 
 //route: /contests/:cid/mysubmissions

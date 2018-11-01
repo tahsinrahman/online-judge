@@ -71,15 +71,13 @@
                 </div>
             </div>
 
-            <!-->
             <div class="col-sm-10">
                 <div class="md-form">
                     <i class="fa fa-envelope prefix grey-text"></i>
-                    <input type="text" id="username" class="form-control" name = "username" required="true">
-                    <label class="control-label col-sm-2" for="username"> Email</label>
+                    <input type="text" id="email" class="form-control" name = "email" required="true">
+                    <label class="control-label col-sm-2" for="email"> Email</label>
                 </div>
             </div>
-            -->
 
             <div class="col-sm-10">
                 <div class="md-form">
@@ -97,9 +95,19 @@
                 </div>
             </div>
 
+            <div class="col-sm-10">
+                <br>
+              <select name="privilege" class="browser-default custom-select mb-3" required="true">
+                <option value="" disabled selected>Register As</option>
+                <option value="student">Student</option>
+                <option value="teacher">Teacher</option>
+              </select>
+            </div>
+
             <div class="text-center">
                 <button class="btn btn-default">Sign Up</button>
             </div>
+
         </form>
     </div>
 

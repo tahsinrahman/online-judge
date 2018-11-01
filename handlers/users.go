@@ -1,16 +1,19 @@
 package handlers
 
 import (
+	"github.com/davecgh/go-spew/spew"
 	"github.com/tahsinrahman/online-judge/db"
 	macaron "gopkg.in/macaron.v1"
 )
 
 type Users struct {
-	Id       int64
-	Name     string `form:"name"`
-	Username string `form:"username"`
-	Password string `form:"password"`
-	Teacher  bool
+	Id        int64
+	Name      string `form:"name"`
+	Email     string `form:"email"`
+	Username  string `form:"username"`
+	Password  string `form:"password"`
+	Privilege string `form:"privilege"`
+	Approved  int
 }
 
 func Init() {
@@ -69,6 +72,12 @@ func PostSignUp(ctx *macaron.Context, user Users) {
 		return
 	}
 
+	if user.Privilege == "teacher" {
+		user.Approved = 0
+	} else {
+		user.Approved = 1
+	}
+
 	//insert into db
 	if _, err := db.Engine.Insert(user); err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
@@ -77,6 +86,39 @@ func PostSignUp(ctx *macaron.Context, user Users) {
 
 	//now redirect to homepage
 	ctx.Redirect(ctx.Req.URL.Host, 302)
+}
+
+func WaitingForApproval(ctx *macaron.Context) {
+	username := ctx.Data["Username"].(string)
+
+	if username != "admin" {
+		ctx.Resp.Write([]byte("unauthorized"))
+	}
+
+	var users []Users
+	db.Engine.Where("approved = 0").Find(&users)
+
+	ctx.Data["List"] = users
+
+	ctx.HTML(200, "waiting_list")
+}
+
+func ApproveTeacher(ctx *macaron.Context) {
+	username := ctx.Data["Username"].(string)
+
+	if username != "admin" {
+		ctx.Resp.Write([]byte("unauthorized"))
+	}
+
+	spew.Dump(ctx.Params("user"))
+
+	var user Users
+	db.Engine.Where("username = ?", ctx.Params("user")).Get(&user)
+
+	user.Approved = 1
+	db.Engine.Id(user.Id).Update(&user)
+
+	ctx.Redirect("/wait")
 }
 
 //signin form
@@ -118,6 +160,11 @@ func PostSignIn(ctx *macaron.Context, user Users) {
 	}
 	if has == false {
 		ctx.Resp.Write([]byte("username or password mismatch"))
+		return
+	}
+
+	if tmpUser.Approved == 0 {
+		ctx.Resp.Write([]byte("waiting for approval"))
 		return
 	}
 

@@ -115,7 +115,10 @@
 
   <script>
     var user = {{.Username}};
-    if(user == "admin") {
+    var privilege = {{.Previlege}};
+console.log(privilege);
+console.log(user);
+    if(user == "admin" || privilege == "teacher") {
         $("#auth").append('<a class="btn btn-primary" href="/contests/new" role="button">Create New</a>');
     }
 

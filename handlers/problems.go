@@ -25,8 +25,8 @@ type Dataset struct {
 	Id          int64
 	ProblemId   int64
 	Label       string
-	JudgeInput  string `xorm:"text"`
-	JudgeOutput string `xorm:"text"`
+	JudgeInput  string `xorm:"longtext"`
+	JudgeOutput string `xorm:"longtext"`
 	Weight      int
 }
 
@@ -67,14 +67,14 @@ type Problem struct {
 	ProblemId    int
 	ContestId    int64
 	Name         string  `form:"name"`
-	Description  string  `form:"description" xorm:"varchar(1000)"`
-	Input        string  `form:"input" xorm:"varchar(1000)"`
-	Output       string  `form:"output" xorm:"varchar(1000)"`
-	SampleInput  string  `form:"sample_input" xorm:"varchar(1000)"`
-	SampleOutput string  `form:"sample_output" xorm:"varchar(1000)"`
+	Description  string  `form:"description" xorm:"text"`
+	Input        string  `form:"input" xorm:"longtext"`
+	Output       string  `form:"output" xorm:"longtext"`
+	SampleInput  string  `form:"sample_input" xorm:"longtext"`
+	SampleOutput string  `form:"sample_output" xorm:"longtext"`
 	TimeLimit    float64 `form:"timelimit"`
 	MemoryLimit  int     `form:"memorylimit"`
-	Notes        string  `form:"notes" xorm:"varchar(1000)"`
+	Notes        string  `form:"notes" xorm:"longtext"`
 	MaxPoint     int     `form:"maxpoint"`
 }
 

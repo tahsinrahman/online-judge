@@ -16,6 +16,11 @@ func main() {
 	//macaron engine
 	m := macaron.Classic()
 
+	//FIXME
+	m.Get("/pd", handlers.PD)
+	m.Get("/wait", handlers.WaitingForApproval)
+	m.Get("/approve/:user", handlers.ApproveTeacher)
+
 	//middlewares for every route
 	m.SetDefaultCookieSecret("tahsin")
 	m.Use(macaron.Renderer())              //for html rendering
@@ -43,6 +48,7 @@ func main() {
 			m.Get("/", handlers.GetDashboard)    //done
 			m.Get("/auth", handlers.ContestAuth) //done
 			m.Get("/rank", handlers.GetRank)
+			m.Get("/submissions", handlers.GetAllSubmissions)
 			m.Get("/submissions/:id", handlers.GetSubmission)
 
 			m.Group("", func() {
