@@ -139,6 +139,7 @@
     $('#submit').click(function(){
       var path = window.location.pathname;
       var contest = {{.Contest}};
+        console.log(contest)
       $('#form').attr({
         'action': '/contests/' + contest["Id"] + '/update',
         'method': 'post'

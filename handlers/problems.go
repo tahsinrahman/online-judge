@@ -14,19 +14,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
+	"github.com/go-macaron/cache"
+	redisCache "github.com/tahsinrahman/online-judge/cache"
 	"github.com/tahsinrahman/online-judge/db"
 	macaron "gopkg.in/macaron.v1"
 )
 
 //Dataset has a set of input and output files
-//each set has associated point values TODO
 type Dataset struct {
 	Id          int64
 	ProblemId   int64
 	Label       string
-	JudgeInput  string `xorm:"longtext"`
-	JudgeOutput string `xorm:"longtext"`
+	JudgeInput  string `json:"-" xorm:"longtext"`
+	JudgeOutput string `json:"-" xorm:"longtext"`
 	Weight      int
 }
 
@@ -128,7 +128,7 @@ func createFile(path, filename string, file *multipart.FileHeader) (string, erro
 	return string(b), nil
 }
 
-func addDataset(cid, pid string, problemId int64, dataset ProblemDataset) error {
+func addDataset(cid, pid string, problemId int64, dataset ProblemDataset, c cache.Cache) error {
 	// add datasets
 	for i, j := 0, len(dataset.JudgeInput); i < j; i++ {
 
@@ -154,6 +154,12 @@ func addDataset(cid, pid string, problemId int64, dataset ProblemDataset) error 
 			return err
 		}
 
+		// remove old cache
+		key := fmt.Sprintf("problem_%v_dataset", data.ProblemId)
+		if err = c.Delete(key); err != nil {
+			return err
+		}
+
 		path := filepath.Join("dataset", cid, pid, strconv.FormatInt(data.Id, 10))
 		_, err = createFile(path, "in", dataset.JudgeInput[i])
 		if err != nil {
@@ -171,7 +177,7 @@ func addDataset(cid, pid string, problemId int64, dataset ProblemDataset) error 
 //gets problem info as formdata
 //inserts infos into db and save files in system storage
 //finally redirects to `contest/cid`
-func PostProblem(ctx *macaron.Context, problem Problem, dataset ProblemDataset) {
+func PostProblem(ctx *macaron.Context, c cache.Cache, problem Problem, dataset ProblemDataset) {
 	contest := ctx.Data["Contest"].(Contest)
 
 	problem.ContestId = contest.Id
@@ -185,25 +191,42 @@ func PostProblem(ctx *macaron.Context, problem Problem, dataset ProblemDataset) 
 		return
 	}
 
+	// remove old cache
 	cid := strconv.FormatInt(contest.Id, 10)
 	pid := strconv.Itoa(problem.ProblemId)
 
-	err = addDataset(cid, pid, problem.Id, dataset)
+	err = addDataset(cid, pid, problem.Id, dataset, c)
 	if err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 
 	// update contest in db
-	_, err = db.Engine.Id(contest.Id).Update(&contest)
-	if err != nil {
-		// remove problem
-		// remove datasets
+	if _, err = db.Engine.Id(contest.Id).Update(&contest); err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 
-	//finally redirecto to dashboard
+	// remove old cache
+	key := fmt.Sprintf("contest_%v_problems", cid)
+	if err = c.Delete(key); err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
+
+	key = "contest_list"
+	if err = c.Delete(key); err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
+
+	key = fmt.Sprintf("contest_%v", contest.Id)
+	if err = c.Delete(key); err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
+
+	//finally redirec to to dashboard
 	ctx.Redirect("/contests/" + cid)
 }
 
@@ -220,7 +243,7 @@ func UpdateProblem(ctx *macaron.Context) {
 }
 
 //route: /contests/:cid/:pid/update PUT
-func UpdateProblemDescripton(ctx *macaron.Context, problem Problem) {
+func UpdateProblemDescripton(ctx *macaron.Context, c cache.Cache, problem Problem) {
 	cid, err := strconv.Atoi(ctx.Params(":cid"))
 	if err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
@@ -233,9 +256,22 @@ func UpdateProblemDescripton(ctx *macaron.Context, problem Problem) {
 		return
 	}
 
-	_, err = db.Engine.Update(&problem, &Problem{ProblemId: pid, ContestId: int64(cid)})
+	oldProblem := ctx.Data["Problem"].(Problem)
 
-	if err != nil {
+	// update problem in db
+	if _, err = db.Engine.Id(oldProblem.Id).Update(&problem); err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
+
+	// update problem in cache
+	key := fmt.Sprintf("contest_%v_problem_%v", cid, pid)
+	if err = c.Delete(key); err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
+	key = fmt.Sprintf("contest_%v_problems", cid)
+	if err = c.Delete(key); err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
@@ -259,8 +295,6 @@ func DownloadTest(ctx *macaron.Context) {
 		return
 	}
 
-	//spew.Dump(dataset)
-
 	var dload string
 	if dataType == "in" {
 		dload = dataset.JudgeInput
@@ -283,7 +317,7 @@ func GetList(ctx *macaron.Context) {
 	}
 }
 
-func DeleteTest(ctx *macaron.Context) {
+func DeleteTest(ctx *macaron.Context, c cache.Cache) {
 	id := ctx.Params(":id")
 	cid := ctx.Params(":cid")
 	pid := ctx.Params(":pid")
@@ -300,9 +334,17 @@ func DeleteTest(ctx *macaron.Context) {
 		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
+
+	// remove old cache
+	problem := ctx.Data["Problem"].(Problem)
+	key := fmt.Sprintf("problem_%v_dataset", problem.Id)
+	if err = c.Delete(key); err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
 }
 
-func AddNewTest(ctx *macaron.Context, dataset ProblemDataset) {
+func AddNewTest(ctx *macaron.Context, c cache.Cache, dataset ProblemDataset) {
 	if len(dataset.JudgeInput) == 0 {
 		ctx.Resp.Write([]byte("nothing found"))
 		return
@@ -310,15 +352,14 @@ func AddNewTest(ctx *macaron.Context, dataset ProblemDataset) {
 
 	problem := ctx.Data["Problem"].(Problem)
 
-	err := addDataset(ctx.Params(":cid"), ctx.Params(":pid"), problem.Id, dataset)
+	err := addDataset(ctx.Params(":cid"), ctx.Params(":pid"), problem.Id, dataset, c)
 	if err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 }
 
-func updateSubmissionStatus(submission *Submission, contest *Contest, problem *Problem) error {
-	// now
+func updateSubmissionStatus(c cache.Cache, submission *Submission, contest *Contest, problem *Problem, oldSubmission string) error {
 	rank := Rank{
 		ContestId: contest.Id,
 		ProblemId: problem.ProblemId,
@@ -329,19 +370,15 @@ func updateSubmissionStatus(submission *Submission, contest *Contest, problem *P
 		return err
 	}
 
-	spew.Dump(rank)
 	if has {
 		if rank.Score < submission.Points {
 			rank.Score = submission.Points
 			rank.Penalty = int64(submission.Time.Sub(contest.ContestStartTime).Minutes()) + int64(rank.Tries*20)
-			rank.Tries++
-		} else {
-			rank.Tries++
 		}
+		rank.Tries++
 
 		if int(rank.Score) == problem.MaxPoint {
 			rank.Status = 1
-			spew.Dump(rank.Status)
 		}
 
 		// update
@@ -357,30 +394,99 @@ func updateSubmissionStatus(submission *Submission, contest *Contest, problem *P
 		}
 		if int(rank.Score) == problem.MaxPoint {
 			rank.Status = 1
-			spew.Dump(rank.Status)
 		}
 
 		// insert
 		_, err := db.Engine.InsertOne(&rank)
 		if err != nil {
-			panic(err)
+			return err
 		}
 	}
 
-	_, err = db.Engine.Id(submission.Id).Update(submission)
-	return err
+	if _, err = db.Engine.Id(submission.Id).Update(submission); err != nil {
+		return err
+	}
+
+	// update cache
+	// first remove old cache
+	key := fmt.Sprintf("submission_%v", submission.Id)
+	if err = c.Delete(key); err != nil {
+		panic(err)
+	}
+
+	key = fmt.Sprintf("contest_%v_submissions", contest.Id)
+	if err := db.Client.SRem(key, oldSubmission).Err(); err != nil {
+		panic(err)
+	}
+	key = fmt.Sprintf("submissions_user_%v_problem_%v", submission.UserName, problem.Id)
+	if err = db.Client.SRem(key, oldSubmission).Err(); err != nil {
+		panic(err)
+	}
+
+	contestSubmission := ContestSubmission{Submission: *submission, Name: problem.Name, ContestId: contest.Id}
+
+	b, err := json.Marshal(contestSubmission)
+	if err != nil {
+		panic(err)
+	}
+
+	// now update new cache
+	key = fmt.Sprintf("contest_%v_submissions", contest.Id)
+	if db.Client.Exists(key).Val() > int64(0) {
+		if err = db.Client.SAdd(key, string(b)).Err(); err != nil {
+			return err
+		}
+	}
+	key = fmt.Sprintf("submissions_user_%v_problem_%v", submission.UserName, problem.Id)
+	if db.Client.Exists(key).Val() > int64(0) {
+		if err = db.Client.SAdd(key, string(b)).Err(); err != nil {
+			return err
+		}
+	}
+
+	key = fmt.Sprintf("submission_%v", submission.Id)
+	return c.Delete(key)
+
+	//return redisCache.AddToList(key, &submission)
 }
 
-func compile(compileCmd string, submission *Submission, contest *Contest, problem *Problem) bool {
+func compile(c cache.Cache, compileCmd string, submission *Submission, contest *Contest, problem *Problem) bool {
 	args := strings.Split(compileCmd, " ")
 	cmd := exec.Command(args[0], args[1:]...)
 	var buf bytes.Buffer
 	cmd.Stderr = &buf
 	err := cmd.Run()
 	if err != nil {
-		submission.Status = "compilation error"
-		err = updateSubmissionStatus(submission, contest, problem)
+		// remove old cache
+		key := fmt.Sprintf("submission_%v", submission.Id)
+		if err = c.Delete(key); err != nil {
+			//FIXME
+			panic(err)
+		}
+		b, err := json.Marshal(submission)
 		if err != nil {
+			panic(err)
+		}
+
+		/*
+			key = fmt.Sprintf("contest_%v_submissions", contest.Id)
+			if err = db.Client.SRem(key, string(b)).Err(); err != nil {
+				panic(err)
+			}
+			key = fmt.Sprintf("submissions_user_%v_problem_%v", submission.UserName, problem.Id)
+			if err = db.Client.SRem(key, string(b)).Err(); err != nil {
+				panic(err)
+			}
+			key = fmt.Sprintf("submission_%v", submission.Id)
+			if err = c.Delete(key); err != nil {
+				panic(err)
+			}
+		*/
+
+		submission.Status = "compilation error"
+		err = updateSubmissionStatus(c, submission, contest, problem, string(b))
+		if err != nil {
+			//FIXME
 			panic(err)
 		}
 		return false
@@ -396,11 +502,19 @@ type DatasetVerdict struct {
 	CPU          string
 }
 
-func run(cid, pid string, submission Submission, contest *Contest, problem *Problem) {
-	// now run for all tests
-	var data []Dataset
-	err := db.Engine.Find(&data, &Dataset{ProblemId: submission.ProblemId})
+func run(c cache.Cache, cid, pid string, submission *Submission, contest *Contest, problem *Problem) {
+	// remove old cache
+	oldSubmission, err := json.Marshal(submission)
 	if err != nil {
+		panic(err)
+	}
+
+	// now run for all tests
+	key := fmt.Sprintf("problem_%v_dataset", submission.ProblemId)
+	dbSession := db.Engine.Where("problem_id = ?", submission.ProblemId)
+	var data []Dataset
+
+	if _, err := redisCache.FindObject(c, key, &data, dbSession, false); err != nil {
 		panic(err)
 	}
 
@@ -417,29 +531,30 @@ func run(cid, pid string, submission Submission, contest *Contest, problem *Prob
 		cmdRun.Stdout = &buf
 		cmdRun.Stderr = &stderr
 
-		err = cmdRun.Run()
-		if err == nil {
+		if err := cmdRun.Run(); err == nil {
 			total += dataset.Weight
 		}
 
-		verdict := "Accepted"
+		verdict := buf.String()
 
-		submission.Status = buf.String()
-		if buf.Len() != 0 && len(submission.Status) != 0 {
-			if submission.Status == "139\n" {
-				submission.Status = "Runtime Error"
-				verdict = "Runtime Error"
-			} else if submission.Status == "WA\n" {
-				submission.Status = "Wrong Answer"
-				verdict = "Wrong Answer"
-			} else {
-				submission.Status = "Time Limit Exceeded"
-				verdict = "Time Limit Exceeded"
+		if verdict == "139\n" {
+			verdict = "Runtime Error"
+			if len(submission.Status) > 0 {
+				submission.Status = verdict
 			}
+		} else if verdict == "WA\n" {
+			verdict = "Wrong Answer"
+			if len(submission.Status) > 0 {
+				submission.Status = verdict
+			}
+		} else if verdict != "" {
+			verdict = "Time Limit Exceeded"
+			if len(submission.Status) > 0 {
+				submission.Status = verdict
+			}
+		} else {
+			verdict = "Accepted"
 		}
-
-		spew.Dump(buf.String())
-		spew.Dump(stderr.String())
 
 		maxPossible += dataset.Weight
 
@@ -449,6 +564,10 @@ func run(cid, pid string, submission Submission, contest *Contest, problem *Prob
 		if err != nil {
 			panic(err)
 		}
+		key := fmt.Sprintf("submission_%v_verdicts", submission.Id)
+		if err := c.Delete(key); err != nil {
+			panic(err)
+		}
 	}
 
 	if total == maxPossible {
@@ -456,53 +575,56 @@ func run(cid, pid string, submission Submission, contest *Contest, problem *Prob
 	}
 
 	submission.Points = float64(problem.MaxPoint) * float64(total) / float64(maxPossible)
-	err = updateSubmissionStatus(&submission, contest, problem)
-	if err != nil {
+
+	if err := updateSubmissionStatus(c, submission, contest, problem, string(oldSubmission)); err != nil {
 		panic(err)
+	}
+}
+
+func runSubmission(c cache.Cache, cid, pid, sourcePath, filename, execName string, submission *Submission, problem *Problem, contest *Contest) {
+	switch submission.Language {
+	case "java":
+		compileCmd := fmt.Sprintf("javac %s", filename)
+		if !compile(c, compileCmd, submission, contest, problem) {
+			return
+		}
+		run(c, cid, pid, submission, contest, problem)
+	case "c++":
+		compileCmd := fmt.Sprintf("g++ -O3 -std=c++14 -o %s %s", execName, filename)
+		if !compile(c, compileCmd, submission, contest, problem) {
+			return
+		}
+		run(c, cid, pid, submission, contest, problem)
+	case "c":
+		compileCmd := fmt.Sprintf("gcc -O3 -o %s %s", execName, filename)
+		if !compile(c, compileCmd, submission, contest, problem) {
+			return
+		}
+		run(c, cid, pid, submission, contest, problem)
+	case "python2":
+		compileCmd := fmt.Sprintf("python2 -m py_compile %s", filename)
+		if !compile(c, compileCmd, submission, contest, problem) {
+			return
+		}
+		run(c, cid, pid, submission, contest, problem)
+	case "python3":
+		compileCmd := fmt.Sprintf("python3 -m py_compile %s", filename)
+		if !compile(c, compileCmd, submission, contest, problem) {
+			return
+		}
+		run(c, cid, pid, submission, contest, problem)
+	default:
+		return
 	}
 }
 
 //route: /contests/:cid/:pid POST
 //submit problem if eligible and logged in
-func SubmitProblem(submission Submission, ctx *macaron.Context) {
-	runSubmission := func(cid, pid, sourcePath, filename, execName string, solution Submission, problem *Problem, contest *Contest) {
-		switch solution.Language {
-		case "java":
-			compileCmd := fmt.Sprintf("javac %s", filename)
-			if !compile(compileCmd, &submission, contest, problem) {
-				spew.Dump("compilation error")
-				return
-			}
-			run(cid, pid, submission, contest, problem)
-		case "c++":
-			compileCmd := fmt.Sprintf("g++ -O3 -std=c++14 -o %s %s", execName, filename)
-			if !compile(compileCmd, &submission, contest, problem) {
-				return
-			}
-			run(cid, pid, submission, contest, problem)
-		case "c":
-			compileCmd := fmt.Sprintf("gcc -O3 -o %s %s", execName, filename)
-			if !compile(compileCmd, &submission, contest, problem) {
-				return
-			}
-			run(cid, pid, submission, contest, problem)
-		case "python2":
-			compileCmd := fmt.Sprintf("python2 -m py_compile %s", filename)
-			if !compile(compileCmd, &submission, contest, problem) {
-				return
-			}
-			run(cid, pid, submission, contest, problem)
-		case "python3":
-			compileCmd := fmt.Sprintf("python3 -m py_compile %s", filename)
-			if !compile(compileCmd, &submission, contest, problem) {
-				return
-			}
-			run(cid, pid, submission, contest, problem)
-		default:
-			panic("unrecognized format")
-		}
+func SubmitProblem(submission Submission, ctx *macaron.Context, c cache.Cache) {
+	if ctx.Data["Username"] == nil {
+		ctx.Resp.Write([]byte("login"))
+		return
 	}
-
 	username := ctx.Data["Username"].(string)
 	problem := ctx.Data["Problem"].(Problem)
 	contest := ctx.Data["Contest"].(Contest)
@@ -527,6 +649,22 @@ func SubmitProblem(submission Submission, ctx *macaron.Context) {
 		return
 	}
 
+	// add to cache
+	key := fmt.Sprintf("contest_%v_submissions", contest.Id)
+	if db.Client.Exists(key).Val() != int64(0) {
+		if err := redisCache.AddToList(key, &submission); err != nil {
+			ctx.Resp.Write([]byte(err.Error()))
+			return
+		}
+	}
+	key = fmt.Sprintf("submissions_user_%v_problem_%v", submission.UserName, problem.Id)
+	if db.Client.Exists(key).Val() != int64(0) {
+		if err := redisCache.AddToList(key, &submission); err != nil {
+			ctx.Resp.Write([]byte(err.Error()))
+			return
+		}
+	}
+
 	// save to local storage
 	submissionId := strconv.FormatInt(submission.Id, 10)
 	path := filepath.Join("submissions", submissionId)
@@ -540,30 +678,39 @@ func SubmitProblem(submission Submission, ctx *macaron.Context) {
 	pid := ctx.Params(":pid")
 
 	// run go routine
-	go runSubmission(cid, pid, path, filepath.Join(path, submission.Source.Filename), filepath.Join(path, submissionId), submission, &problem, &contest)
+	go runSubmission(c, cid, pid, path, filepath.Join(path, submission.Source.Filename), filepath.Join(path, submissionId), &submission, &problem, &contest)
 
 	ctx.Redirect("/contests/" + cid + "/" + pid)
 }
 
-func GetSubmission(ctx *macaron.Context) {
+func GetSubmission(ctx *macaron.Context, c cache.Cache) {
 	var verdicts []DatasetVerdict
-	err := db.Engine.Where("submission_id = ?", ctx.Params("id")).Find(&verdicts)
+	key := fmt.Sprintf("submission_%v_verdicts", ctx.Params("id"))
+	dbSession := db.Engine.Where("submission_id = ?", ctx.Params("id"))
 
+	if _, err := redisCache.FindObject(c, key, &verdicts, dbSession, false); err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
+
+	subId, err := strconv.Atoi(ctx.Params("id"))
 	if err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 
-	var submission Submission
-	_, err = db.Engine.Id(ctx.Params("id")).Get(&submission)
-	if err != nil {
+	key = fmt.Sprintf("submission_%v", subId)
+	submission := Submission{Id: int64(subId)}
+
+	if _, err := redisCache.FindObject(c, key, &submission, nil, true); err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 
-	var problem Problem
-	_, err = db.Engine.Id(submission.ProblemId).Get(&problem)
-	if err != nil {
+	key = fmt.Sprintf("problem_%v", submission.ProblemId)
+	problem := Problem{Id: submission.ProblemId}
+
+	if _, err = redisCache.FindObject(c, key, &problem, nil, true); err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
