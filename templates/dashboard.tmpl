@@ -119,7 +119,7 @@ p {
 
 
 <script>
-    while("{{.Permission}}" == "false") {
+    while("{{.Permission}}" != "true") {
         pass = promptFunc();
         console.log(pass);
         if (pass == null) {
@@ -171,25 +171,6 @@ p {
       $("#problem_list").append(x);
     }
   </script>
-<script>
-$(function () {
-  $.ajax({
-    type: 'GET',
-    cache: false,
-    url: location.href,
-    complete: function (req, textStatus) {
-      var dateString = req.getResponseHeader('Date');
-      if (dateString.indexOf('GMT') === -1) {
-        dateString += ' GMT';
-      }
-      var date = new Date(dateString);
-      console.log(date);
-      $('#serverTime').text(date.toString());
-    }
-  });
-});
-</script>
-
 
 <script>
 // Set the date we're counting down to
@@ -197,19 +178,9 @@ var contest = {{.Contest}};
 var countDownStart = new Date(contest.ContestStartTime).getTime();
 var countDownEnd = new Date(contest.ContestEndTime).getTime();
 
-// Update the count down every 1 second
 var x = setInterval(function() {
     $(function () {
-      $.ajax({
-        type: 'GET',
-        cache: false,
-        url: location.href,
-        complete: function (req, textStatus) {
-          var dateString = req.getResponseHeader('Date');
-          if (dateString.indexOf('GMT') === -1) {
-            dateString += ' GMT';
-          }
-          var date = new Date(dateString);
+          date = Date.now();
           var distanceToEnd = countDownEnd - date;
           if (distanceToEnd < 0) {
               clearInterval(x);
@@ -242,10 +213,7 @@ var x = setInterval(function() {
           // output the result in an element with id="demo"
           document.getElementById("status").innerHTML = "Time To Start";
           document.getElementById("demo").innerHTML = days + "d " + hours + "h " + minutes + "m " + seconds + "s ";
-        }
       });
-    });
-
 }, 1000);
 </script>
 

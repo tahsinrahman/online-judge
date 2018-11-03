@@ -1,6 +1,9 @@
 package main
 
 import (
+	"github.com/go-macaron/cache"
+	_ "github.com/go-macaron/cache/redis"
+
 	"github.com/go-macaron/binding"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/tahsinrahman/online-judge/db"
@@ -15,6 +18,14 @@ func main() {
 
 	//macaron engine
 	m := macaron.Classic()
+	m.Use(macaron.Renderer()) //for html rendering
+	m.Use(cache.Cacher(cache.Options{
+		Adapter:       "redis",
+		AdapterConfig: "addr=127.0.0.1:6379",
+		OccupyMode:    false,
+	}))
+
+	m.Use(middlewares.CheckAuthentication) //check cookie
 
 	//FIXME
 	m.Get("/pd", handlers.PD)
@@ -23,8 +34,6 @@ func main() {
 
 	//middlewares for every route
 	m.SetDefaultCookieSecret("tahsin")
-	m.Use(macaron.Renderer())              //for html rendering
-	m.Use(middlewares.CheckAuthentication) //check cookie
 
 	//handlers for user registration, login and logout TODO: secret key based cookie
 	m.Get("/", handlers.GetHome)                                           //done

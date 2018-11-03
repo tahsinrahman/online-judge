@@ -3,13 +3,15 @@ package handlers
 import (
 	"errors"
 	"fmt"
-	"log"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/go-macaron/cache"
+
 	"github.com/davecgh/go-spew/spew"
+	redisCache "github.com/tahsinrahman/online-judge/cache"
 	"github.com/tahsinrahman/online-judge/db"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -93,34 +95,35 @@ func findTime(contest Contest) (time.Time, time.Time, error) {
 
 	return contestStartTime, contestEndTime, nil
 }
+func CatagorizeContest(contest *Contest, running, upcoming, past *[]Contest) {
+	contestStartTime, contestEndTime := contest.ContestStartTime, contest.ContestEndTime
+
+	//catagorize into running, upcoming and past
+	if time.Now().After(contestStartTime) {
+		if contestEndTime.After(time.Now()) {
+			*running = append(*running, *contest)
+		} else {
+			*past = append(*past, *contest)
+		}
+	} else {
+		*upcoming = append(*upcoming, *contest)
+	}
+}
 
 //route: /contests
 //show all contests, sorted by time TODO: sorted by time
-func GetAllContests(ctx *macaron.Context) {
+func GetAllContests(ctx *macaron.Context, c cache.Cache) {
 	var all, running, upcoming, past []Contest
 
-	if err := db.Engine.Find(&all); err != nil {
-		//ctx.Resp.Write([]byte("500 internal server error"))
+	key := "contest_list"
+	if _, err := redisCache.FindObject(c, key, &all, db.Engine.NewSession(), false); err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
-
 	for _, contest := range all {
-		contestStartTime, contestEndTime := contest.ContestStartTime, contest.ContestEndTime
-
-		//catagorize into running, upcoming and past
-		if time.Now().After(contestStartTime) {
-			if contestEndTime.After(time.Now()) {
-				running = append(running, contest)
-			} else {
-				past = append(past, contest)
-			}
-		} else {
-			upcoming = append(upcoming, contest)
-		}
+		CatagorizeContest(&contest, &running, &upcoming, &past)
 	}
 
-	//TODO: sort by time
 	ctx.Data["Upcoming"] = upcoming
 	ctx.Data["Running"] = running
 	ctx.Data["Past"] = past
@@ -136,17 +139,16 @@ func GetNewContest(ctx *macaron.Context) {
 	ctx.HTML(200, "new_contest")
 }
 
-func newContestForm(ctx *macaron.Context, contest Contest, update bool) (Contest, error) {
+func newContestForm(ctx *macaron.Context, c cache.Cache, contest Contest, update bool) (Contest, error) {
 	//check if manager is valid
 	var manager = Users{Username: contest.Manager}
-	has, err := db.Engine.Get(&manager)
+
+	key := fmt.Sprintf("user_%v", manager.Username)
+	has, err := redisCache.FindObject(c, key, &manager, nil, true)
 
 	if err != nil {
-		//ctx.Resp.Write([]byte("500 internal server error"))
 		return contest, err
-	}
-
-	if has == false {
+	} else if has == false {
 		return contest, errors.New("manager not found")
 	}
 
@@ -158,7 +160,6 @@ func newContestForm(ctx *macaron.Context, contest Contest, update bool) (Contest
 	st, en, err := findTime(contest)
 
 	if err != nil {
-		//fmt.Println(err)
 		return contest, err
 	}
 
@@ -166,11 +167,6 @@ func newContestForm(ctx *macaron.Context, contest Contest, update bool) (Contest
 	contest.ContestStartTime = st
 	contest.ContestEndTime = en
 
-	log.Println("============", contest)
-
-	log.Println(time.Now())
-	log.Println(st)
-	log.Println(en)
 	if !update && time.Now().After(st) {
 		return contest, errors.New("start time must not be less than current time")
 	}
@@ -180,54 +176,55 @@ func newContestForm(ctx *macaron.Context, contest Contest, update bool) (Contest
 
 //route: /contests/new POST
 //create a new contest, admin must be logged in
-func PostContest(ctx *macaron.Context, contest Contest) {
-	newContest, err := newContestForm(ctx, contest, false)
+func PostContest(ctx *macaron.Context, c cache.Cache, contest Contest) {
+	newContest, err := newContestForm(ctx, c, contest, false)
 
 	if err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 
-	log.Println("===================", newContest)
-
-	//insert the contest into the db
+	// insert the contest into the db
 	_, err = db.Engine.Insert(&newContest)
 
 	if err != nil {
-		//ctx.Resp.Write([]byte("500 internal server error"))
+		ctx.Resp.Write([]byte("error here " + err.Error()))
+		return
+	}
+
+	// remove old cache with key "contest_list"
+	key := "contest_list"
+	if err = c.Delete(key); err != nil {
 		ctx.Resp.Write([]byte("error here " + err.Error()))
 		return
 	}
 
 	//redirect to contests page
 	ctx.Redirect("/contests")
-
 }
 
 //route: /contests/:cid
 //show dashboard/list of all problems if (contest is running && user has permission) || user = manager
 //if logged in, show solved in green
-func GetDashboard(ctx *macaron.Context) {
+func GetDashboard(ctx *macaron.Context, c cache.Cache) {
 	//checkigs are done in middleware
-
 	contest := ctx.Data["Contest"].(Contest)
 
+	key := fmt.Sprintf("contest_%v_problems", contest.Id)
+	dbSession := db.Engine.Where("contest_id = ?", ctx.Params(":cid"))
 	var all []Problem
-	if err := db.Engine.Where("contest_id = ?", ctx.Params(":cid")).Find(&all); err != nil {
-		//fmt.Println(err)
-		//ctx.Resp.Write([]byte("500 internal server error"))
+
+	if _, err := redisCache.FindObject(c, key, &all, dbSession, false); err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 
-	//TODO: optimize timing in dashboard
-
-	//user == manager
-	//user has permission && contest is running
+	// user == manager
+	// user has permission && contest is running
 	if ctx.Data["Username"] != nil && ctx.Data["Username"].(string) == contest.Manager {
 		ctx.Data["Problems"] = all
 	} else if time.Now().After(contest.ContestStartTime) {
-		//check user has permission
+		// check user has permission
 		ctx.Data["Problems"] = all
 	}
 
@@ -243,8 +240,8 @@ func GetUpdateContest(ctx *macaron.Context) {
 
 //route: /contests/:cid/update POST
 //update contest info into db
-func PutContest(ctx *macaron.Context, contest Contest) {
-	newContest, err := newContestForm(ctx, contest, true)
+func PutContest(ctx *macaron.Context, c cache.Cache, contest Contest) {
+	newContest, err := newContestForm(ctx, c, contest, true)
 
 	if err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
@@ -252,22 +249,27 @@ func PutContest(ctx *macaron.Context, contest Contest) {
 	}
 
 	cid := ctx.Params(":cid")
+
 	//update db
 	_, err = db.Engine.Id(cid).Update(&newContest)
-
 	if err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 
-	ctx.Redirect("/contests/" + cid)
-}
+	// remove old contest from cache with key "contest=ID"
+	key := fmt.Sprintf("contest_%v", cid)
+	if err = c.Delete(key); err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
+	// remove old cache with key "contest_list"
+	if err = c.Delete("contest_list"); err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
 
-//route: /contests/:cid DELETE
-//show dashboard
-//if logged in, show solved in green
-func DeleteContest(ctx *macaron.Context) {
-	fmt.Println("GetDashboard")
+	ctx.Redirect("/contests/" + cid)
 }
 
 //route: /contests/:cid/rank
@@ -355,26 +357,30 @@ type ContestSubmission struct {
 func (ContestSubmission) TableName() string {
 	return "submission"
 }
-func GetAllSubmissions(ctx *macaron.Context) {
 
+func GetAllSubmissions(ctx *macaron.Context) {
+	key := fmt.Sprintf("contest_%v_submissions", ctx.Params(":cid"))
+	dbSession := db.Engine.Join("INNER", "problem", "problem.id = submission.problem_id").Where("problem.contest_id = ?", ctx.Params("cid"))
 	var submissions []ContestSubmission
-	err := db.Engine.Join("INNER", "problem", "problem.id = submission.problem_id").Where("problem.contest_id = ?", ctx.Params("cid")).Find(&submissions)
-	if err != nil {
-		ctx.Resp.Write([]byte(err.Error()))
+
+	if err := redisCache.CheckList(key, &submissions, dbSession); err != nil {
+		ctx.Resp.Write([]byte("please log-in"))
+		return
 	}
+
 	ctx.Data["Submissions"] = submissions
 
 	ctx.HTML(200, "all_submissions")
 }
 
-//route: /contests/:cid/mysubmissions
-//show my submission, if logged in and eligible
-func GetMySubmissions(ctx *macaron.Context) {
-	fmt.Println("GetMySubmissions")
-}
-
 func ContestAuth(ctx *macaron.Context) {
-	username := ctx.Data["Username"].(string)
+	username, _ := ctx.Data["Username"].(string)
+
+	if username == "" {
+		ctx.Resp.Write([]byte("please log-in"))
+		return
+	}
+
 	contest := ctx.Data["Contest"].(Contest)
 	db.Engine.Insert(&ContestPermission{UserName: username, ContestId: contest.Id})
 }

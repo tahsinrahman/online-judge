@@ -424,23 +424,6 @@
         </div>
     </div>
 <script>
-	/*
-	$(document).ready(function() {
-		$('#limits-tab').on("click", function() {
-			//console.log("clicked limits tab");
-			//$('#limits-div').show();
-			$('#tests-div').hide();
-		});
-	});
-	$(document).ready(function() {
-		$('#tests-tab').on("click", function() {
-			//console.log("clicked limits tab");
-			//$('#limits-div').hide();
-			$('#tests-div').show();
-		});
-	});
-*/
-
     var problem = {{.Problem}};
     var Data;
     get_list();
@@ -472,9 +455,6 @@
           datatype: "json",
           async: false,
         }).responseText);
-        console.log("new_data");
-        console.log(new_data);
-
         show_table(new_data);
     }
 

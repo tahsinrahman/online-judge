@@ -1,59 +1,64 @@
 package middlewares
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
+	redisCache "github.com/tahsinrahman/online-judge/cache"
+
+	"github.com/go-macaron/cache"
+
 	"github.com/tahsinrahman/online-judge/db"
 	"github.com/tahsinrahman/online-judge/handlers"
 	macaron "gopkg.in/macaron.v1"
 )
 
-//get username from cookie, check if username exists
-//TODO: securecookie using token
-func CheckAuthentication(ctx *macaron.Context) {
+// get username from cookie, check if username exists in database
+// if username not found, user not authenticated
+func CheckAuthentication(ctx *macaron.Context, c cache.Cache) {
 	cookie, has := ctx.GetSecureCookie("user")
 
 	if !has {
 		return
 	}
 
-	//user if logged in
-	//used it for showing logout option in html
-	ctx.Data["Login"] = 1
-	ctx.Data["Username"] = cookie
-
 	user := handlers.Users{Username: cookie}
-	has, _ = db.Engine.Get(&user)
+	key := fmt.Sprintf("user_%v", user.Username)
 
+	has, err := redisCache.FindObject(c, key, &user, nil, true)
+	if err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
+
+	// found user
 	if has {
-		spew.Dump(user)
+		ctx.Data["Login"] = 1
+		ctx.Data["Username"] = cookie
 		ctx.Data["Previlege"] = user.Privilege
 	}
 }
 
-func CheckContestExistance(ctx *macaron.Context) {
-	tmp, err := strconv.Atoi(ctx.Params(":cid"))
+// check if contest id exists
+func CheckContestExistance(ctx *macaron.Context, c cache.Cache) {
+	cid, err := strconv.Atoi(ctx.Params(":cid"))
 	if err != nil {
-		//		fmt.Println(err)
-		//ctx.Resp.Write([]byte("500 internal server error"))
-		ctx.Resp.Write([]byte(err.Error()))
-		return
-	}
-	cid := int64(tmp)
-
-	var contest = handlers.Contest{Id: cid}
-	has, err := db.Engine.Get(&contest)
-
-	if err != nil {
-		//fmt.Println(err)
-		//ctx.Resp.Write([]byte("500 internal server error"))
 		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 
-	if has == false {
+	contest := handlers.Contest{Id: int64(cid)}
+	key := fmt.Sprintf("contest_%v", contest.Id)
+
+	has, err := redisCache.FindObject(c, key, &contest, nil, true)
+
+	if err != nil {
+		ctx.Resp.Write([]byte(err.Error()))
+		return
+	}
+
+	if !has {
 		ctx.Resp.Write([]byte("contest doesn't exist"))
 		return
 	}
@@ -61,21 +66,21 @@ func CheckContestExistance(ctx *macaron.Context) {
 	ctx.Data["Contest"] = contest
 }
 
-func CheckProblem(ctx *macaron.Context) {
+func CheckProblem(ctx *macaron.Context, c cache.Cache) {
 	pid, err := strconv.Atoi(ctx.Params(":pid"))
 	if err != nil {
-		//ctx.Resp.Write([]byte("500 internal server error"))
 		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 
 	contest := ctx.Data["Contest"].(handlers.Contest)
 
-	var problem = handlers.Problem{ContestId: contest.Id, ProblemId: pid}
-	has, err := db.Engine.Get(&problem)
+	problem := handlers.Problem{ContestId: contest.Id, ProblemId: pid}
+	key := fmt.Sprintf("contest_%v_problem_%v", problem.ContestId, problem.ProblemId)
+
+	has, err := redisCache.FindObject(c, key, &problem, nil, true)
 
 	if err != nil {
-		//ctx.Resp.Write([]byte("500 internal server error"))
 		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
@@ -97,13 +102,14 @@ func CheckManager(ctx *macaron.Context) {
 	}
 }
 
-func AddTests(ctx *macaron.Context) {
+func AddTests(ctx *macaron.Context, c cache.Cache) {
 	problem, _ := ctx.Data["Problem"].(handlers.Problem)
-
 	var dataset []handlers.Dataset
 
-	err := db.Engine.Find(&dataset, &handlers.Dataset{ProblemId: problem.Id})
-	if err != nil {
+	key := fmt.Sprintf("problem_%v_dataset", problem.Id)
+	xormSession := db.Engine.Cols("id", "label", "weight").Where("problem_id = ?", problem.Id)
+
+	if _, err := redisCache.FindObject(c, key, &dataset, xormSession, false); err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
@@ -119,10 +125,11 @@ func AddSubmissions(ctx *macaron.Context) {
 		return
 	}
 
+	key := fmt.Sprintf("submissions_user_%v_problem_%v", username, problem.Id)
+	dbSession := db.Engine.Where("problem_id = ? and user_name = ?", problem.Id, username)
 	var submissions []handlers.Submission
-	err := db.Engine.Find(&submissions, &handlers.Submission{ProblemId: problem.Id, UserName: username})
 
-	if err != nil {
+	if err := redisCache.CheckList(key, &submissions, dbSession); err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
@@ -163,13 +170,15 @@ func CheckEndTime(ctx *macaron.Context) {
 	}
 }
 
-func AddContestPermission(ctx *macaron.Context) {
+func AddContestPermission(ctx *macaron.Context, c cache.Cache) {
 	if ctx.Data["Username"] != nil {
 		username := ctx.Data["Username"].(string)
 		contest := ctx.Data["Contest"].(handlers.Contest)
 
-		has, err := db.Engine.Get(&handlers.ContestPermission{UserName: username, ContestId: contest.Id})
+		perm := handlers.ContestPermission{UserName: username, ContestId: contest.Id}
+		key := fmt.Sprintf("perm_contest_%v_user=%v", contest.Id, username)
 
+		has, err := redisCache.FindObject(c, key, &perm, nil, true)
 		if err != nil {
 			ctx.Resp.Write([]byte(err.Error()))
 			return

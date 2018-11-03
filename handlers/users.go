@@ -1,7 +1,11 @@
 package handlers
 
 import (
-	"github.com/davecgh/go-spew/spew"
+	"fmt"
+
+	"github.com/go-macaron/cache"
+	_ "github.com/go-macaron/cache/redis"
+	redisCache "github.com/tahsinrahman/online-judge/cache"
 	"github.com/tahsinrahman/online-judge/db"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -27,13 +31,13 @@ func Init() {
 	db.Engine.Sync(new(DatasetVerdict))
 }
 
-//homepage
+// homepage
 func GetHome(ctx *macaron.Context) {
 	//show index.html
 	ctx.HTML(200, "index")
 }
 
-//signup form
+// signup form
 func GetSignUp(ctx *macaron.Context) {
 	//if logged in, redirect to home
 	if ctx.Data["Login"] == 1 {
@@ -46,7 +50,7 @@ func GetSignUp(ctx *macaron.Context) {
 }
 
 //get signup form data
-func PostSignUp(ctx *macaron.Context, user Users) {
+func PostSignUp(ctx *macaron.Context, c cache.Cache, user Users) {
 	//if logged in, redirect to home
 	if ctx.Data["Login"] == 1 {
 		ctx.Redirect(ctx.Req.URL.Host, 302)
@@ -54,16 +58,15 @@ func PostSignUp(ctx *macaron.Context, user Users) {
 	}
 	//TODO: encryption for pass
 
-	//check if username already exists
-	//else insert new user into db
+	//check if username exists
 
-	//check if exists
-	var tmpUser = Users{Username: user.Username}
-	has, err := db.Engine.Get(&tmpUser)
+	value := Users{Username: user.Username}
+	key := fmt.Sprintf("user_%v", user.Username)
+
+	has, err := redisCache.FindObject(c, key, &value, nil, true)
 
 	if err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
-		//		ctx.Resp.Write([]byte("500 internal server error"))
 		return
 	}
 
@@ -89,6 +92,10 @@ func PostSignUp(ctx *macaron.Context, user Users) {
 }
 
 func WaitingForApproval(ctx *macaron.Context) {
+	if ctx.Data["Username"] == nil {
+		ctx.Resp.Write([]byte("unauthorized"))
+		return
+	}
 	username := ctx.Data["Username"].(string)
 
 	if username != "admin" {
@@ -103,20 +110,27 @@ func WaitingForApproval(ctx *macaron.Context) {
 	ctx.HTML(200, "waiting_list")
 }
 
-func ApproveTeacher(ctx *macaron.Context) {
+func ApproveTeacher(ctx *macaron.Context, c cache.Cache) {
 	username := ctx.Data["Username"].(string)
 
 	if username != "admin" {
 		ctx.Resp.Write([]byte("unauthorized"))
+		return
 	}
-
-	spew.Dump(ctx.Params("user"))
 
 	var user Users
 	db.Engine.Where("username = ?", ctx.Params("user")).Get(&user)
 
 	user.Approved = 1
 	db.Engine.Id(user.Id).Update(&user)
+
+	// update cache
+	key := fmt.Sprintf("user_%v", user.Username)
+	err := redisCache.StoreCache(c, key, &user)
+	if err != nil {
+		ctx.Resp.Write([]byte("unauthorized"))
+		return
+	}
 
 	ctx.Redirect("/wait")
 }
@@ -134,7 +148,7 @@ func GetSignIn(ctx *macaron.Context) {
 }
 
 //get user data from form
-func PostSignIn(ctx *macaron.Context, user Users) {
+func PostSignIn(ctx *macaron.Context, c cache.Cache, user Users) {
 	//if logged in, redirect to home
 	if ctx.Data["Login"] == 1 {
 		ctx.Redirect(ctx.Req.URL.Host, 302)
@@ -148,22 +162,25 @@ func PostSignIn(ctx *macaron.Context, user Users) {
 	//then check if password matches
 	//then setcookie
 
-	//TODO: if username exists, show message "username exists", if password mismatch, show "wrong password"
-
 	//check if username exists
-	var tmpUser = Users{Username: user.Username, Password: user.Password}
-	has, err := db.Engine.Get(&tmpUser)
+	var dbUser = Users{Username: user.Username}
+	key := fmt.Sprintf("user_%v", dbUser.Username)
+	has, err := redisCache.FindObject(c, key, &dbUser, nil, true)
 
 	if err != nil {
-		ctx.Resp.Write([]byte("500 internal server error"))
+		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 	if has == false {
-		ctx.Resp.Write([]byte("username or password mismatch"))
+		ctx.Resp.Write([]byte("username not found"))
+		return
+	}
+	if dbUser.Password != user.Password {
+		ctx.Resp.Write([]byte("wrong password"))
 		return
 	}
 
-	if tmpUser.Approved == 0 {
+	if dbUser.Approved == 0 {
 		ctx.Resp.Write([]byte("waiting for approval"))
 		return
 	}
