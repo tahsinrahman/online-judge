@@ -151,6 +151,10 @@
     });
   });
     var submissions = {{.Submissions}};
+    submissions.sort(function(a, b){
+        return a["Id"] > b["Id"];
+    });
+
     var contest = {{.Contest}};
     console.log(submissions);
     var len = 0;

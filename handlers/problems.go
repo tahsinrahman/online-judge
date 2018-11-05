@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/go-macaron/cache"
 	redisCache "github.com/tahsinrahman/online-judge/cache"
 	"github.com/tahsinrahman/online-judge/db"
@@ -43,8 +44,9 @@ type Submission struct {
 	UserName   string
 	Time       time.Time
 	Language   string                `form:"language"`
-	Source     *multipart.FileHeader `form:"source" xorm:"-"`
-	Submission string                `xorm:"text"`
+	Source     *multipart.FileHeader `form:"source" xorm:"-" json:"-"`
+	Submission string                `xorm:"longtext"`
+	Filename   string
 	Status     string
 	Points     float64
 }
@@ -67,7 +69,7 @@ type Problem struct {
 	ProblemId    int
 	ContestId    int64
 	Name         string  `form:"name"`
-	Description  string  `form:"description" xorm:"text"`
+	Description  string  `form:"description" xorm:"longtext"`
 	Input        string  `form:"input" xorm:"longtext"`
 	Output       string  `form:"output" xorm:"longtext"`
 	SampleInput  string  `form:"sample_input" xorm:"longtext"`
@@ -370,7 +372,19 @@ func updateSubmissionStatus(c cache.Cache, submission *Submission, contest *Cont
 		return err
 	}
 
+	key := fmt.Sprintf("contest_%v_rank", contest.Id)
 	if has {
+		// remove old cache
+		oldRank, err := json.Marshal(rank)
+		if err != nil {
+			return err
+		}
+
+		spew.Dump(key, string(oldRank))
+		if err := db.Client.SRem(key, string(oldRank)).Err(); err != nil {
+			return err
+		}
+
 		if rank.Score < submission.Points {
 			rank.Score = submission.Points
 			rank.Penalty = int64(submission.Time.Sub(contest.ContestStartTime).Minutes()) + int64(rank.Tries*20)
@@ -386,6 +400,16 @@ func updateSubmissionStatus(c cache.Cache, submission *Submission, contest *Cont
 		if err != nil {
 			return err
 		}
+
+		// insert new cache
+		newRank, err := json.Marshal(rank)
+		if err != nil {
+			return err
+		}
+		if db.Client.SAdd(key, string(newRank)).Err(); err != nil {
+			return err
+		}
+
 	} else {
 		rank.Score = submission.Points
 		rank.Tries = 1
@@ -401,6 +425,15 @@ func updateSubmissionStatus(c cache.Cache, submission *Submission, contest *Cont
 		if err != nil {
 			return err
 		}
+
+		// insert new cache
+		newRank, err := json.Marshal(rank)
+		if err != nil {
+			return err
+		}
+		if db.Client.SAdd(key, string(newRank)).Err(); err != nil {
+			return err
+		}
 	}
 
 	if _, err = db.Engine.Id(submission.Id).Update(submission); err != nil {
@@ -409,7 +442,7 @@ func updateSubmissionStatus(c cache.Cache, submission *Submission, contest *Cont
 
 	// update cache
 	// first remove old cache
-	key := fmt.Sprintf("submission_%v", submission.Id)
+	key = fmt.Sprintf("submission_%v", submission.Id)
 	if err = c.Delete(key); err != nil {
 		panic(err)
 	}
@@ -419,6 +452,7 @@ func updateSubmissionStatus(c cache.Cache, submission *Submission, contest *Cont
 		panic(err)
 	}
 	key = fmt.Sprintf("submissions_user_%v_problem_%v", submission.UserName, problem.Id)
+	//res, _ := db.Client.SMembers(key).Result()
 	if err = db.Client.SRem(key, oldSubmission).Err(); err != nil {
 		panic(err)
 	}
@@ -631,6 +665,7 @@ func SubmitProblem(submission Submission, ctx *macaron.Context, c cache.Cache) {
 
 	// prepare submission
 	submission.Time = time.Now()
+	submission.Time = time.Unix(submission.Time.Unix(), 0)
 	submission.UserName = username
 	submission.ProblemId = problem.Id
 
@@ -639,6 +674,8 @@ func SubmitProblem(submission Submission, ctx *macaron.Context, c cache.Cache) {
 		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
+
+	submission.Filename = submission.Source.Filename
 	submission.Submission = string(b)
 	submission.Status = "pending"
 

@@ -87,7 +87,7 @@ p {
             <!--Table head-->
             <thead>
                 <tr id="table-head">
-                    <th>#</th>
+                    <th class="text-center">#</th>
                     <th class="text-center">Name</th>
                     <th class="text-center">Score</th>
                 </tr>
@@ -112,6 +112,12 @@ p {
     var ranklist = {{.ranklist}}
 
     console.log(ranklist);
+    ranklist.sort(function(a, b) {
+        if (a["Scores"][0]["Score"] == b["Scores"][0]["Score"]) {
+            return a["Scores"][0]["Penalty"] > b["Scores"][0]["Penalty"];
+        }
+        return a["Scores"][0]["Score"] < b["Scores"][0]["Score"]
+    })
 
     for(var i = 0; contest != null && i < contest.ProblemCount; i++) {
         var mydiv = alphabet[i];
@@ -120,15 +126,15 @@ p {
 
 for(var i = 0; ranklist != null && i < ranklist.length; i++) {
     var myrank = ranklist[i];
-    var username = myrank["ProblemScores"][0]["UserName"];
+    var username = myrank["Name"];
     var mydiv = `
     <tr>
         <td class="text-center">${i+1}</td>
         <td class="text-center">${username}</td>
         <td class="text-center">
             <h6 class="h6-responsive">
-                <div><span class="badge blue">${myrank["TotalScore"]}</span></div>
-                <div><span class="badge black">${myrank["TotalPenalty"]}</span></div>
+                <div><span class="badge blue">${myrank["Scores"][0]["Score"]}</span></div>
+                <div><span class="badge black">${myrank["Scores"][0]["Penalty"]}</span></div>
             </h6>
         </td>
         `;
@@ -141,12 +147,12 @@ for(var i = 0; ranklist != null && i < ranklist.length; i++) {
     $('#list').append(mydiv);
 }
 for(var i = 0; ranklist != null && i < ranklist.length; i++) {
-    var myrank = ranklist[i]["ProblemScores"];
-    var username = myrank[0]["UserName"];
+    var username = ranklist[i]["Name"];
+    var myrank = ranklist[i]["Scores"];
     console.log(myrank);
 
-    for(var j = 0; myrank != null && j < myrank.length; j++) {
-        var id = username+"-"+myrank[j]["ProblemId"];
+    for(var j = 1; myrank != null && j < myrank.length; j++) if (myrank[j]["Attempts"] != 0) {
+        var id = username+"-"+(j)
         console.log(id);
         var color;
         if (myrank[j]["Status"]) {
@@ -157,7 +163,7 @@ for(var i = 0; ranklist != null && i < ranklist.length; i++) {
         var mydiv = `
             <h6 class="h6-responsive">
                 <div><span class="badge badge-${color}">${myrank[j]["Score"]}</span></div>
-                <div><span class="badge badge-black">${myrank[j]["Tries"]}</span></div>
+                <div><span class="badge badge-black">${myrank[j]["Attempts"]}</span></div>
             </h6>
         `
         $('#' + id).append(mydiv);
