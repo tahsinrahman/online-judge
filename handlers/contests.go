@@ -3,14 +3,12 @@ package handlers
 import (
 	"errors"
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/go-macaron/cache"
 
-	"github.com/davecgh/go-spew/spew"
 	redisCache "github.com/tahsinrahman/online-judge/cache"
 	"github.com/tahsinrahman/online-judge/db"
 	macaron "gopkg.in/macaron.v1"
@@ -276,72 +274,51 @@ func PutContest(ctx *macaron.Context, c cache.Cache, contest Contest) {
 //show contest ranklist
 func GetRank(ctx *macaron.Context) {
 	cid := ctx.Params(":cid")
+	contest := ctx.Data["Contest"].(Contest)
 
-	contestId, err := strconv.ParseInt(cid, 10, 64)
-	if err != nil {
+	key := fmt.Sprintf("contest_%v_rank", cid)
+	var ranks []Rank
+	dbSession := db.Engine.Where("contest_id = ?", cid)
+
+	if err := redisCache.CheckList(key, &ranks, dbSession); err != nil {
 		ctx.Resp.Write([]byte(err.Error()))
 		return
 	}
 
-	// find users who have participated
-	var users []string
-	err = db.Engine.Table("rank").Where("contest_id = ?", contestId).Cols("user_name").Find(&users)
-	if err != nil {
-		ctx.Resp.Write([]byte(err.Error()))
-		return
+	type ScorePenalty struct {
+		Score    float64
+		Penalty  int64
+		Status   int
+		Attempts int
 	}
-	spew.Dump(users)
 
-	unique := make(map[string]int)
+	rankList := make(map[string][]ScorePenalty)
+	totalUsers := 0
+
+	for _, rank := range ranks {
+		_, ok := rankList[rank.UserName]
+		if !ok {
+			rankList[rank.UserName] = make([]ScorePenalty, contest.ProblemCount+1)
+			totalUsers++
+		}
+
+		rankList[rank.UserName][rank.ProblemId] = ScorePenalty{rank.Score, rank.Penalty, rank.Status, rank.Tries}
+		rankList[rank.UserName][0].Score += rank.Score
+		rankList[rank.UserName][0].Penalty += rank.Penalty
+	}
 
 	type UserRank struct {
-		TotalScore    float64
-		TotalPenalty  int64
-		ProblemScores []Rank
+		Name   string
+		Scores []ScorePenalty
 	}
-	var ranklist []UserRank
 
-	// now, get list of problems solved by each user
-	for _, username := range users {
-		if unique[username] == 1 {
-			continue
-		}
-		unique[username] = 1
-
-		spew.Dump(username)
-
-		var rank []Rank
-		err = db.Engine.Find(&rank, &Rank{ContestId: contestId, UserName: username})
-		if err != nil {
-			ctx.Resp.Write([]byte(err.Error()))
-			return
-		}
-
-		var totalScore float64
-		var totalPenalty int64
-		for _, myrank := range rank {
-			totalScore += myrank.Score
-			totalPenalty += myrank.Penalty
-		}
-
-		userRank := UserRank{
-			TotalScore:    totalScore,
-			TotalPenalty:  totalPenalty,
-			ProblemScores: rank,
-		}
-
-		ranklist = append(ranklist, userRank)
+	userrank := make([]UserRank, totalUsers)
+	for key, val := range rankList {
+		totalUsers--
+		userrank[totalUsers] = UserRank{key, val}
 	}
-	spew.Dump(ranklist)
 
-	sort.Slice(ranklist, func(i, j int) bool {
-		if ranklist[i].TotalScore == ranklist[j].TotalScore {
-			return ranklist[i].TotalPenalty < ranklist[j].TotalPenalty
-		}
-		return ranklist[i].TotalScore > ranklist[j].TotalScore
-	})
-	spew.Dump(ranklist)
-	ctx.Data["ranklist"] = ranklist
+	ctx.Data["ranklist"] = userrank
 	ctx.HTML(200, "ranklist")
 }
 
