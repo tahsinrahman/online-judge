@@ -16,6 +16,9 @@ func StartEngine() {
 	var err error
 	Engine, err = xorm.NewEngine("mysql", "root:@/online-judge?charset=utf8")
 
+	cacher := xorm.NewLRUCacher(xorm.NewMemoryStore(), 1000)
+	Engine.SetDefaultCacher(cacher)
+
 	if err != nil {
 		panic(err.Error())
 	}
